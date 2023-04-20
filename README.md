@@ -30,7 +30,7 @@ or
 ```
 $ python -m pyinstaller hermes.py
 ```
-Next, add the generated `dist/hemes` folder to the system's `PATH` environment variable. Hermes is now set up.
+Next, add the generated `dist/hermes` folder to the system's `PATH` environment variable. Hermes is now set up.
 
 
 # Usage
