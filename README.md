@@ -1,6 +1,7 @@
 
-# Hermes⚡
+<h1 align = "center">Hermes⚡</h1>
 
+---
 
 A python based light-weight build system for C/C++, with an emphasis on simplicity and ease of use. The aim is to maintain transparency, but abstract away the tedious parts of building a project.
 
