@@ -1,5 +1,5 @@
 
-# Hermes⚡
+<h1 align = "center">Hermes⚡</h1>
 
 
 A python based light-weight build system for C/C++, with an emphasis on simplicity and ease of use. The aim is to maintain transparency, but abstract away the tedious parts of building a project.
@@ -30,7 +30,7 @@ or
 ```
 $ python -m pyinstaller hermes.py
 ```
-Next, add the generated dist/hemes folder to the system's `PATH` environment variable. Hermes is now set up.
+Next, add the generated `dist/hermes` folder to the system's `PATH` environment variable. Hermes is now set up.
 
 
 # Usage
@@ -45,7 +45,7 @@ or simply create an empty `hermes.json` file. To build the project, simply run `
 <br>
 <br>
 
-The JSON file the following (and only) settings for building the project:
+The JSON file controls the following (and only) settings for building the project:
 
 - `"compiler"` : The compiler used for building; defaults to `g++` (not included) or uses the full path provided to compiler binary.
 - `"inputs"` : Input files for the project; list of paths to the `.cpp` files. Can be absolute or relative paths, and to include all files in a folder use `"folderpath/*"` syntax; this contains all `.cpp` files both internal and external to the project directory.
