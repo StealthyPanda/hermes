@@ -56,6 +56,7 @@ pinp = colorama.Fore.LIGHTCYAN_EX +     f"Input Files       : {' '.join(config['
 config['inputs'] = list(map(
 
     lambda x: f"{cwd}\\{x[2:]}" if (x[:2] == './' and x[-1] != '*') else x,
+    # lambda x: f"{cwd}\\{x[2:]}" if (x[:2] == './') else x,
 
 config['inputs']))
 breakable = True
@@ -73,6 +74,8 @@ while breakable:
                     config['inputs'].append(f"{folder}/{file}/*")
                     breakable = True
             del config['inputs'][i]
+
+
 
 
 try:

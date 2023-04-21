@@ -48,8 +48,8 @@ or simply create an empty `hermes.json` file. To build the project, simply run `
 The JSON file the following (and only) settings for building the project:
 
 - `"compiler"` : The compiler used for building; defaults to `g++` (not included) or uses the full path provided to compiler binary.
-- `"inputs"` : Input files for the project; list of paths to the `.cpp` files. Can be absolute or relative paths, and to include all files in a folder use `"folderpath/*"` syntax.
-- `"includes"` : List of all the include files; syntax follows that of `"inputs"`
+- `"inputs"` : Input files for the project; list of paths to the `.cpp` files. Can be absolute or relative paths, and to include all files in a folder use `"folderpath/*"` syntax; this contains all `.cpp` files both internal and external to the project directory.
+- `"includes"` : List of all the include files' folder paths; syntax follows that of `"inputs"`; this contains header files outside of your project directory.
 - `"output"` : Output file name; defaults to `*first_input_file_name*_output.exe`
 - `"run"` : Optional setting, if set `true` the build output is automatically launched after building; defaults to `false`
 - `"flags"` : List of any additional flags; these flags are added to the final compiler command as is.
@@ -66,8 +66,11 @@ and see the final compiler command.
 And that's it! The build system is meant to be as non-opaque as possible, while still automating and speeding up only most tedious part of the building process, while still giving you complete control.
 
 
+## Authors
+- [@stealthypanda](https://github.com/stealthypanda)🐼
 
 <br>
 <br>
+
 
 [![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com) [![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
