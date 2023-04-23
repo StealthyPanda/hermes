@@ -24,6 +24,9 @@ $ pip install pyinstaller
 ```
 
 ### Installation
+
+*For windows x86_64, direct binaries can be downloaded from [here](https://github.com/StealthyPanda/hermes/releases/tag/v1.1)*
+
 Download this repo as a zip file or clone it to you machine. In the main project directory, run:
 ```
 $ pyinstaller hermes.py
