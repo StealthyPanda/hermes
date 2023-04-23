@@ -1,16 +1,18 @@
 
 <h1 align = "center">Hermes⚡</h1>
 
+<div align = "center">
 
 A python based light-weight build system for C/C++, with an emphasis on simplicity and ease of use. The aim is to maintain transparency, but abstract away the tedious parts of building a project.
 
+</div>
 
-<div align = "center">
+<!-- <div align = "center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/stealthypanda/hermes.svg)](https://github.com/stealthypanda/hermes/stargazers)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)![GitHub release (latest by date)](https://img.shields.io/github/v/release/stealthypanda/hermes)
 
-</div>
+</div> -->
 
 ## Setup
 
@@ -57,9 +59,22 @@ The JSON file controls the following (and only) settings for building the projec
 Finally, to get verbose output, run:
 
 ```
-$ hermes -v
+$ hermes -v (for verbose) | -vv (for super verbose)
 ```
 and see the final compiler command.
+
+Hermes also has a global config file, which is stored at `C:\hermes` or `/etc/hermes`. To interact with this file through the terminal, use:
+```
+$ hermes global <operation> <key> <value>
+```
+where
+
+- operations:
+    - `change` - changes value at `key` to given `value`
+    - `append` - appends the given `value` at `key` (only for lists)
+    - `show` - display the current globals config
+
+Note: `show` requires no `key`/`value`, and a `value` of `.` sets it to empty.
 <br>
 <br>
 
