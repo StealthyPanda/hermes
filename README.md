@@ -47,7 +47,7 @@ or simply create an empty `hermes.json` file. To build the project, simply run `
 
 The JSON file controls the following (and only) settings for building the project:
 
-- `"compiler"` : The compiler used for building; defaults to `g++` (not included) or uses the full path provided to compiler binary.
+- `"compiler"` : The compiler used for building; defaults to `c++` (not included) or uses the full path provided to compiler binary.
 - `"inputs"` : Input files for the project; list of paths to the `.cpp` files. Can be absolute or relative paths, and to include all files in a folder use `"folderpath/*"` syntax; this contains all `.cpp` files both internal and external to the project directory.
 - `"includes"` : List of all the include files' folder paths; syntax follows that of `"inputs"`; this contains header files outside of your project directory.
 - `"output"` : Output file name; defaults to `*first_input_file_name*_output.exe`
