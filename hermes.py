@@ -2,12 +2,18 @@ import json, os, sys
 import colorama
 import time
 
+from hashlib import sha1
+
+
+
+
+
 cwd = os.getcwd()
 
 start = time.time()
 
-verbose = ('-v' in sys.argv)
 superverbose = '-vv' in sys.argv
+verbose = ('-v' in sys.argv) or superverbose
 
 finalcommand = []
 
@@ -130,6 +136,12 @@ except FileNotFoundError as e:
             "run" : False,
             "flags" : [],
         }, indent=4))
+    try:
+        os.mkdir(f"{cwd}/.hermes")
+        os.mkdir(f"{cwd}/.hermes/objs")
+        with open(f"{cwd}/.hermes/tracker.json", 'w') as file:
+            json.dump(dict(), file, indent = 4)
+    except FileExistsError: pass
     print(colorama.Fore.LIGHTGREEN_EX + colorama.Style.BRIGHT + 
         "Project config JSON file successfully generated! Hermes project initialized." + colorama.Style.RESET_ALL)
     sys.exit(0)
@@ -206,6 +218,51 @@ except FileExistsError as e:
 
 #-----------------------------------------------------------------------------------------
 
+
+#----------------------------------------------------
+#file tracking stuff
+
+changes = []
+
+tracks = None
+try:
+    with open(f'{cwd}/.hermes/tracker.json', 'r') as file : tracks = json.load(file)
+except:
+    tracks = dict()
+
+if superverbose:
+    print("File tracking hashes:")
+    for each in tracks.keys():
+        print(each, tracks[each])
+
+for eachfile in config['inputs']:
+    if eachfile in tracks.keys():
+        with open(eachfile, 'r') as file:
+            code = sha1(file.read().strip().encode()).hexdigest()
+        if code != tracks[eachfile]:
+            changes.append(eachfile)
+            if superverbose: print(f"Changes in {eachfile}")
+            tracks[eachfile] = code
+    else:
+        changes.append(eachfile)
+        if superverbose: print(f"Changes in {eachfile}")
+        with open(eachfile, 'r') as file:
+            tracks[eachfile] = sha1(file.read().strip().encode()).hexdigest()
+
+with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+    file.write(json.dumps(tracks, indent=4))
+
+
+# for eachchange in changes:
+#     filename = eachchange.split('\\')[-1].split('/')[-1]
+#     filename = filename.split('.')[0]
+#     if superverbose: print(filename)
+#     os.system()
+
+#----------------------------------------------------
+
+
+
 argflags = {
     'includes' : '-I',
     'inputs'   : '',
@@ -223,7 +280,8 @@ for each in config:
     if config[each]:
         finalcommand.append(argflags[each])
         if type(config[each]) == list:
-            for val in config[each]:
+            for i, val in enumerate(config[each]):
+                if i: finalcommand.append(argflags[each])
                 if each != 'flags' : finalcommand.append(f"\"{val}\"")
                 else : finalcommand.append(f"{val}")
         else : finalcommand.append(f"\"{config[each]}\"")
