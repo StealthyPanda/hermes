@@ -231,6 +231,27 @@ for each in config:
 
 finalcommand = list(filter(lambda x:x, finalcommand))
 
+#--------------------------------------------------------------
+#adding build optimizations
+opt = 0
+if '-b' in sys.argv : opt = 1
+if '-bb' in sys.argv : opt = 2
+if '-bbb' in sys.argv : opt = 3
+
+if opt:
+    print(colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+          f"\nOptimizations O{opt} enabled! Building application..." + colorama.Style.RESET_ALL)
+    finalcommand.append(f'-O{opt}')
+
+if '-saikyou' in sys.argv:
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.BLUE +
+          f"\nApplying fastest possible optimizations! Building application..." + colorama.Style.RESET_ALL
+    )
+    finalcommand.append('-Ofast')
+
+#--------------------------------------------------------------
+
 
 if superverbose:
     print()
