@@ -78,6 +78,19 @@ where
     - `show` - display the current globals config
 
 Note: `show` requires no `key`/`value`, and a `value` of `.` sets it to empty.
+
+### Build optimizations
+
+While these can be added as `flags`, optimizations can also be enabled for a single compilation by running:
+```
+$ hermes <opt>
+```
+where `<opt>` can be
+- `-b` for O1 level
+- `-bb` for O2 level
+- `-bbb` for O3 level
+- `-saikyou` for Ofast level
+*Note: Not all these optimization levels are available in all compilers; refer to docs*
 <br>
 <br>
 
