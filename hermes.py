@@ -1,10 +1,7 @@
 import json, os, sys
 import colorama
 import time
-
 from hashlib import sha1
-
-
 
 
 
@@ -201,9 +198,9 @@ while breakable:
             files = os.listdir(folder)
             for file in files:
                 if '.' in file:
-                    config['inputs'].append(f"{folder}/{file}")
+                    config['inputs'].append(f"{folder}{file}")
                 else:
-                    config['inputs'].append(f"{folder}/{file}/*")
+                    config['inputs'].append(f"{folder}{file}/*")
                     breakable = True
             del config['inputs'][i]
 
@@ -249,9 +246,14 @@ for eachfile in config['inputs']:
         with open(eachfile, 'r') as file:
             tracks[eachfile] = sha1(file.read().strip().encode()).hexdigest()
 
-with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
-    file.write(json.dumps(tracks, indent=4))
-
+try:
+    with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+        file.write(json.dumps(tracks, indent=4))
+except FileNotFoundError:
+    os.mkdir(f"{cwd}/.hermes")
+    os.mkdir(f"{cwd}/.hermes/objs")
+    with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+        file.write(json.dumps(tracks, indent=4))
 
 # for eachchange in changes:
 #     filename = eachchange.split('\\')[-1].split('/')[-1]
@@ -259,8 +261,15 @@ with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
 #     if superverbose: print(filename)
 #     os.system()
 
+if '-redo' in sys.argv : changes = config['inputs']
+
 #----------------------------------------------------
 
+#adding build optimizations
+opt = 0
+if '-b' in sys.argv : opt = 1
+if '-bb' in sys.argv : opt = 2
+if '-bbb' in sys.argv : opt = 3
 
 
 argflags = {
@@ -271,51 +280,38 @@ argflags = {
 }
 
 
-for each in config:
-    if superverbose : print(each, config[each])
-    if each == 'compiler':
-        finalcommand.append(config[each])
-        continue
+#--------------------------------------------------------------------------------------------------
+#obj stuff
+
+includesection = ""
+for each in config['includes']:
+    includesection += f'-I"{each}"'
+
+if superverbose:print(f"Include section:\n{includesection}")
+
+objsnames = []
+for eachchange in changes:
+    filename = eachchange.split('\\')[-1].split('/')[-1].split('.')[0]
+    if verbose:
+        print(colorama.Fore.GREEN +
+            f"Updating objects for `{filename}`" + colorama.Style.RESET_ALL)
+    if filename in objsnames: filename = f"{filename}1"
     
-    if config[each]:
-        finalcommand.append(argflags[each])
-        if type(config[each]) == list:
-            for i, val in enumerate(config[each]):
-                if i: finalcommand.append(argflags[each])
-                if each != 'flags' : finalcommand.append(f"\"{val}\"")
-                else : finalcommand.append(f"{val}")
-        else : finalcommand.append(f"\"{config[each]}\"")
+    objcomm = (f"{config['compiler']} -c {eachchange} -o {cwd}/.hermes/objs/{filename}.o {includesection} " +
+        f"{['-O1', '-O2', '-O3'][opt - 1] if opt > 0 else ('-Ofast' if '-saikyou' in sys.argv else '')}")
+    
+    if superverbose:print(objcomm)
+
+    if os.system(objcomm):
+        end = time.time()
+        print(colorama.Style.BRIGHT + colorama.Fore.RED +
+              f"Compilation Failed! Error in `{filename}` Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+        sys.exit(1)
 
 
-finalcommand = list(filter(lambda x:x, finalcommand))
-
-#--------------------------------------------------------------
-#adding build optimizations
-opt = 0
-if '-b' in sys.argv : opt = 1
-if '-bb' in sys.argv : opt = 2
-if '-bbb' in sys.argv : opt = 3
-
-if opt:
-    print(colorama.Style.BRIGHT + colorama.Fore.YELLOW +
-          f"\nOptimizations O{opt} enabled! Building application..." + colorama.Style.RESET_ALL)
-    finalcommand.append(f'-O{opt}')
-
-if '-saikyou' in sys.argv:
-    print(
-        colorama.Style.BRIGHT + colorama.Fore.BLUE +
-          f"\nApplying fastest possible optimizations! Building application..." + colorama.Style.RESET_ALL
-    )
-    finalcommand.append('-Ofast')
-
-#--------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------
 
 
-if superverbose:
-    print()
-    print(finalcommand)
-
-finalcommand = " ".join(finalcommand)
 
 if verbose:
     print(colorama.Fore.LIGHTBLUE_EX +     f"Compiler          : {config['compiler']}" + colorama.Style.RESET_ALL)
@@ -326,23 +322,115 @@ if verbose:
     print(colorama.Fore.LIGHTCYAN_EX +     f"Additional flags  : {' '.join(config['flags'])}" + colorama.Style.RESET_ALL)
     print()
 
-if os.system(finalcommand) == 0:
 
-    end = time.time()
 
-    print(colorama.Fore.GREEN + colorama.Style.BRIGHT + f"Compilation successful! Build completed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#force rebuilding the whole thing
 
-    if run:
+if ('-f' in sys.argv) or ('-force' in sys.argv) or ('-release' in sys.argv):
+    print(colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+          "Release mode, building application..." + colorama.Style.RESET_ALL)
+    
+    for each in config:
+        if superverbose : print(each, config[each])
+        if each == 'compiler':
+            finalcommand.append(config[each])
+            continue
+        
+        if config[each]:
+            finalcommand.append(argflags[each])
+            if type(config[each]) == list:
+                for i, val in enumerate(config[each]):
+                    if i: finalcommand.append(argflags[each])
+                    if each != 'flags' : finalcommand.append(f"\"{val}\"")
+                    else : finalcommand.append(f"{val}")
+            else : finalcommand.append(f"\"{config[each]}\"")
+
+
+    finalcommand = list(filter(lambda x:x, finalcommand))
+
+    #--------------------------------------------------------------
+    #build optimizations
+
+    if opt:
+        print(colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+            f"\nOptimizations O{opt} enabled! Building application..." + colorama.Style.RESET_ALL)
+        finalcommand.append(f'-O{opt}')
+
+    if ('-saikyou' in sys.argv) or ('-release' in sys.argv):
+        print(
+            colorama.Style.BRIGHT + colorama.Fore.BLUE +
+            f"\nApplying fastest possible optimizations! Building application..." + colorama.Style.RESET_ALL
+        )
+        finalcommand.append('-Ofast')
+
+    #--------------------------------------------------------------
+
+
+    if superverbose:
         print()
-        start = time.time()
-        code = os.system(f"{config['output']}.exe")
+        print(finalcommand)
+
+    finalcommand = " ".join(finalcommand)
+
+    if os.system(finalcommand) == 0:
+
         end = time.time()
 
-        code = (colorama.Fore.RED if code else colorama.Fore.GREEN) + f"code {code}" + colorama.Style.RESET_ALL
+        print(colorama.Fore.GREEN + colorama.Style.BRIGHT + f"Compilation successful! Build completed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
 
-        print(f"\nExecution finished with exit {code} in {str(end - start)[:4]}s")
-        os.system("pause")
+    else:
+        end = time.time()
+        print(colorama.Fore.RED + f"Compilation Failed! Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+        sys.exit(1)
 
-else:
+#------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------------------------------------------
+#compiling all objects into final executable
+
+foc = f"{config['compiler']} {cwd}/.hermes/objs/*.o -o {config['output']}"
+
+for eachflag in config['flags']:
+    foc += eachflag
+    foc += ' '
+
+
+if opt:
+    print(colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+        f"\nOptimizations O{opt} enabled! Building application..." + colorama.Style.RESET_ALL)
+    foc += (f'-O{opt}')
+
+if '-saikyou' in sys.argv:
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.BLUE +
+        f"\nApplying fastest possible optimizations! Building application..." + colorama.Style.RESET_ALL
+    )
+    foc += ('-Ofast')
+
+if superverbose:print(foc)
+if os.system(foc):
     end = time.time()
-    print(colorama.Fore.RED + f"Compilation Failed! Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+    print(colorama.Style.BRIGHT + colorama.Fore.RED +
+            f"Compilation Failed! Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+    sys.exit(1)
+
+end = time.time()
+print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
+            f"Compilation Successful! Build succeeded in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+
+#---------------------------------------------------------------------------------------------------------------
+
+
+
+if run:
+    print()
+    start = time.time()
+    code = os.system(f"{config['output']}.exe")
+    end = time.time()
+
+    code = (colorama.Fore.RED if code else colorama.Fore.GREEN) + f"code {code}" + colorama.Style.RESET_ALL
+
+    print(f"\nExecution finished with exit {code} in {str(end - start)[:4]}s")
+    os.system("pause")
