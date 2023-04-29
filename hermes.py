@@ -178,14 +178,14 @@ if not(config['compiler']): config['compiler'] = 'c++'
 
 if not(config['output']):
     config['output'] = f"{config['inputs'][0].split('.')[1][1:]}_output"
-config['output'] = f"{cwd}\\debug\\{config['output']}"
+config['output'] = f"{cwd}/debug/{config['output']}"
 
 if verbose:pinp = colorama.Fore.LIGHTCYAN_EX +     f"Input Files       : {' '.join(config['inputs'])}" + colorama.Style.RESET_ALL
 
 config['inputs'] = list(map(
 
-    lambda x: f"{cwd}\\{x[2:]}" if (x[:2] == './' and x[-1] != '*') else x,
-    # lambda x: f"{cwd}\\{x[2:]}" if (x[:2] == './') else x,
+    lambda x: f"{cwd}/{x[2:]}" if (x[:2] == './' and x[-1] != '*') else x,
+    # lambda x: f"{cwd}/{x[2:]}" if (x[:2] == './') else x,
 
 config['inputs']))
 breakable = True
@@ -194,7 +194,7 @@ while breakable:
     breakable = False
     for i, each in enumerate(config['inputs']):
         if each[-1] == '*':
-            folder = f"{cwd}\\{each[2:-1]}" if each[:2] == './' else f"{each[:-1]}"
+            folder = f"{cwd}/{each[2:-1]}" if each[:2] == './' else f"{each[:-1]}"
             files = os.listdir(folder)
             for file in files:
                 if '.' in file:
@@ -208,7 +208,7 @@ while breakable:
 
 
 try:
-    os.mkdir(f"{cwd}\\debug")
+    os.mkdir(f"{cwd}/debug")
     print(colorama.Fore.GREEN + "Created `debug` folder" + colorama.Style.RESET_ALL)
 except FileExistsError as e:
     pass
