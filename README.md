@@ -91,6 +91,12 @@ where `<opt>` can be
 - `-bbb` for O3 level
 - `-saikyou` for Ofast level
 *Note: Not all these optimization levels are available in all compilers; refer to docs*
+
+<br>
+<br>
+
+All input files (`*.c`, `*.cxx` etc) are tracked automatically, and when hermes is called, only files with changes are recompiled to update object files, reducing build times. To force recompilation of all files, use `-redo` to simply update all object files, or `-force` to simple compile the entire application in a single compile command, original style.
+
 <br>
 <br>
 
