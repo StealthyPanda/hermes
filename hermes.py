@@ -427,7 +427,7 @@ print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
 if run:
     print()
     start = time.time()
-    code = os.system(f"{config['output']}.exe")
+    code = os.system(f"{config['output']}.exe") if 'win32' in sys.argv else os.system(f"./{config['output']}")
     end = time.time()
 
     code = (colorama.Fore.RED if code else colorama.Fore.GREEN) + f"code {code}" + colorama.Style.RESET_ALL
