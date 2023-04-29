@@ -427,10 +427,10 @@ print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
 if run:
     print()
     start = time.time()
-    code = os.system(f"{config['output']}.exe") if 'win32' in sys.argv else os.system(config['output'])
+    code = os.system(f"{config['output']}.exe") if 'win32' in sys.platform else os.system(config['output'])
     end = time.time()
 
     code = (colorama.Fore.RED if code else colorama.Fore.GREEN) + f"code {code}" + colorama.Style.RESET_ALL
 
     print(f"\nExecution finished with exit {code} in {str(end - start)[:4]}s")
-    os.system("pause")
+    if 'win32' in sys.platform : os.system("pause")
