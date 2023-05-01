@@ -338,6 +338,7 @@ if ('-f' in sys.argv) or ('-force' in sys.argv) or ('-release' in sys.argv):
             continue
         
         if config[each]:
+            finalcommand.append(" ")
             finalcommand.append(argflags[each])
             if type(config[each]) == list:
                 for i, val in enumerate(config[each]):
@@ -390,7 +391,7 @@ if ('-f' in sys.argv) or ('-force' in sys.argv) or ('-release' in sys.argv):
 #---------------------------------------------------------------------------------------------------------------
 #compiling all objects into final executable
 
-foc = f"{config['compiler']} {cwd}/.hermes/objs/*.o -o {config['output']}"
+foc = f"{config['compiler']} {cwd}/.hermes/objs/*.o -o {config['output']} "
 
 for eachflag in config['flags']:
     foc += eachflag
