@@ -143,6 +143,19 @@ except FileNotFoundError as e:
         "Project config JSON file successfully generated! Hermes project initialized." + colorama.Style.RESET_ALL)
     sys.exit(0)
 
+#-----------------------------------------------------------------------
+#filtering config file
+
+for prop in config.keys():
+    if type(config[prop]) == list:
+        config[prop] = list(filter(lambda x:x, config[prop]))
+
+
+#-----------------------------------------------------------------------
+
+
+
+
 #-----------------------------------------------------------------------------------------
 # dealing with default config values
 # - default compiler is c++
@@ -391,11 +404,18 @@ if ('-f' in sys.argv) or ('-force' in sys.argv) or ('-release' in sys.argv):
 #---------------------------------------------------------------------------------------------------------------
 #compiling all objects into final executable
 
-foc = f"{config['compiler']} {cwd}/.hermes/objs/*.o -o {config['output']} "
+#{cwd}/.hermes/objs/*.o
+
+foc = f"{config['compiler']} "
+
+for eachinput in config['inputs']:
+    filename = eachinput.split('/')[-1].split('\\')[-1].split('.')[0]
+    foc += f"{cwd}/.hermes/objs/{filename}.o "
+
+foc += f"-o {config['output']} "
 
 for eachflag in config['flags']:
-    foc += eachflag
-    foc += ' '
+    foc += f"{eachflag} "
 
 
 if opt:
@@ -415,6 +435,8 @@ if os.system(foc):
     end = time.time()
     print(colorama.Style.BRIGHT + colorama.Fore.RED +
             f"Compilation Failed! Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
+    print(colorama.Style.DIM + colorama.Fore.RED +
+            f"This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added." + colorama.Style.RESET_ALL)
     sys.exit(1)
 
 end = time.time()
