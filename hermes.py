@@ -137,7 +137,7 @@ except FileNotFoundError as e:
         os.mkdir(f"{cwd}/.hermes")
         os.mkdir(f"{cwd}/.hermes/objs")
         with open(f"{cwd}/.hermes/tracker.json", 'w') as file:
-            json.dump(dict(), file, indent = 4)
+            json.dump({"objs":dict(), "headers":dict()}, file, indent = 4)
     except FileExistsError: pass
     print(colorama.Fore.LIGHTGREEN_EX + colorama.Style.BRIGHT + 
         "Project config JSON file successfully generated! Hermes project initialized." + colorama.Style.RESET_ALL)
@@ -238,27 +238,30 @@ tracks = None
 try:
     with open(f'{cwd}/.hermes/tracker.json', 'r') as file : tracks = json.load(file)
 except:
-    tracks = dict()
+    tracks = {"objs" : dict(), "headers" : dict()}
 
 if superverbose:
     print("File tracking hashes:")
-    for each in tracks.keys():
+    for each in tracks['objs'].keys():
         print(each, tracks[each])
 
 for eachfile in config['inputs']:
-    if eachfile in tracks.keys():
+    if eachfile in tracks['objs'].keys():
         with open(eachfile, 'r') as file:
             code = sha1(file.read().strip().encode()).hexdigest()
-        if code != tracks[eachfile]:
+        if code != tracks['objs'][eachfile]:
             changes.append(eachfile)
             if superverbose: print(f"Changes in {eachfile}")
-            tracks[eachfile] = code
+            tracks['objs'][eachfile] = code
     else:
         changes.append(eachfile)
         if superverbose: print(f"Changes in {eachfile}")
         with open(eachfile, 'r') as file:
-            tracks[eachfile] = sha1(file.read().strip().encode()).hexdigest()
+            tracks['objs'][eachfile] = sha1(file.read().strip().encode()).hexdigest()
 
+
+
+#writing tracks back to json file
 try:
     with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
         file.write(json.dumps(tracks, indent=4))
