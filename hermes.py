@@ -39,10 +39,18 @@ opt = 0
 if '-b' in sys.argv : opt = 1
 if '-bb' in sys.argv : opt = 2
 if '-bbb' in sys.argv : opt = 3
+if opt and verbose:
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+        f"Build optimizations level O{opt} enabled!" + colorama.Style.RESET_ALL
+    )
 opt = f"-O{opt}" if opt else ''
-if '-saikyou' in sysargs: opt = '-Ofast'
-
-
+if '-saikou' in sysargs: opt = '-Ofast'
+if (opt == '-Ofast') and verbose:
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.BLUE +
+        "最高(Saikou) mode enabled!\n⚡Applying fastest possible optimizations..." + colorama.Style.RESET_ALL
+    )
 
 
 

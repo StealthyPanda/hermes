@@ -89,7 +89,7 @@ where `<opt>` can be
 - `-b` for O1 level
 - `-bb` for O2 level
 - `-bbb` for O3 level
-- `-saikyou` for Ofast level
+- `-saikou` for Ofast level
 *Note: Not all these optimization levels are available in all compilers; refer to docs*
 
 <br>
