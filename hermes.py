@@ -508,7 +508,15 @@ fixfolderstructure()
 
 with open(f"{cwd}/hermes.json", 'r') as file:
     projecthermes = json.load(file)
-
+if not projecthermes['compiler']:
+    projecthermes['compiler'] = 'c++'
+projecthermes['inputs'] = list(filter(lambda x:x, projecthermes['inputs']))
+if not projecthermes['inputs']:
+    print(
+        colorama.Fore.RED + colorama.Style.BRIGHT + 
+        "Error! No input files provided!" + colorama.Style.RESET_ALL
+    )
+    sys.exit(1)
 
 combineglobals()
 
