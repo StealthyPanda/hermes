@@ -18,7 +18,7 @@ elif 'linux' in sys.platform : platform = 'lin'
 
 macfolder = ""
 winfolder = "C:\\hermes\\"
-linfolder = "/etc/linux/"
+linfolder = "/etc/hermes/"
 
 template = {
     "compiler" : "",
