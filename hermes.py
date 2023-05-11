@@ -260,6 +260,10 @@ for eachfile in config['inputs']:
             tracks['objs'][eachfile] = sha1(file.read().strip().encode()).hexdigest()
 
 
+#TODO:
+#- Implement header file tracking.
+
+
 
 #writing tracks back to json file
 try:
@@ -301,7 +305,7 @@ argflags = {
 
 includesection = ""
 for each in config['includes']:
-    includesection += f'-I"{each}"'
+    includesection += f'-I"{each}" '
 
 if superverbose:print(f"Include section:\n{includesection}")
 
@@ -312,6 +316,7 @@ for eachchange in changes:
         print(colorama.Fore.GREEN +
             f"Updating objects for `{filename}`" + colorama.Style.RESET_ALL)
     if filename in objsnames: filename = f"{filename}1"
+    objsnames.append(filename)
     
     objcomm = (f"{config['compiler']} -c {eachchange} -o {cwd}/.hermes/objs/{filename}.o {includesection} " +
         f"{['-O1', '-O2', '-O3'][opt - 1] if opt > 0 else ('-Ofast' if '-saikyou' in sys.argv else '')}")
