@@ -556,7 +556,7 @@ buildfinalapp()
 if projecthermes['run']:
     start = time.time()
     if platform == 'win':c = os.system(f"{cwd}/.hermes/debug/{projecthermes['output']}.exe")
-    if platform == 'lin':c = os.system(f"./{cwd}/.hermes/debug/{projecthermes['output']}")
+    if platform == 'lin':c = os.system(f"{cwd}/.hermes/debug/{projecthermes['output']}")
     end = time.time()
     
     print(f"\nExecution finished with " + 
