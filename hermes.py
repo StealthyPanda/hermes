@@ -467,6 +467,10 @@ def updateobjs():
             print(colorama.Fore.RED +
                   f"Build failed in {str(time.time() - start)[:4]}s with exit code {c}!"
                   + colorama.Style.RESET_ALL)
+            with open(f"{cwd}/.hermes/tracker.json", 'w+') as file:
+                tracks = json.load(file)
+                del tracks[each]
+                file.write(json.dumps(tracks, indent = 4))
             sys.exit(1)
 
 def buildfinalapp():
