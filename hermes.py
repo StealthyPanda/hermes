@@ -312,10 +312,24 @@ def getfilename(path: str) -> str:
     return path.split('/')[-1].split('\\')[-1]
 
 def getheaders(code : str) -> List[str]:
-    lines = list(filter(lambda x: x, map(lambda x:x.strip(), code.strip().split('\n'))))
+    lines = (filter(lambda x: x, map(lambda x:x.strip(), code.strip().split('\n'))))
+
+    insidecomment = False
+    for i, each in lines:
+        if '/*' in each:
+            insidecomment = True
+            lines[i] = each[:each.index('/*')]
+        elif '*/' in each:
+            insidecomment = False
+            lines[i] = each[each.index('*/') + 2:]
+        elif insidecomment:
+            lines[i] = ''
+    
+    lines = filter(lambda x : x, lines)        
+
     headers = []
     for each in lines:
-        if '#include' in each:
+        if ('#include' in each) and ('//' != each[:2]):
             headers.append(each[len('#include'):].strip()[1:-1])
     return headers
 
@@ -411,19 +425,27 @@ def trackfiles():
                                 }
                             except FileNotFoundError : pass
     
+    dellater = []
     for eachtrack in tracks.keys():
         if type(tracks[eachtrack]) == dict:
-            with open(eachtrack, 'r') as file:
-                hashcode = sha1(file.read().strip().encode()).hexdigest()
+            try:
+                with open(eachtrack, 'r') as file:
+                    hashcode = sha1(file.read().strip().encode()).hexdigest()
+            except FileNotFoundError:
+                if verbose: print(colorama.Style.DIM + f"Removing tracks for deleted file `{eachtrack}`..." +
+                                  colorama.Style.RESET_ALL)
+                dellater.append(eachtrack)
+                continue
             if tracks[eachtrack]['hash'] != hashcode:
                 tracks[eachtrack]['hash'] = hashcode
                 if verbose:
                     print(colorama.Style.BRIGHT +
                         f"Updating header track `{eachtrack}`" +
                         colorama.Style.RESET_ALL)
-                changedfiles += list(filter(lambda x: x not in changedfiles,
+                changedfiles += list(filter(lambda x: (x not in changedfiles) and (x in projecthermes['inputs']),
                                             tracks[eachtrack]['files']))
-
+    for eachdel in dellater:
+        del tracks[eachdel]
 
     if verbose:
         for eachfile in changedfiles:
