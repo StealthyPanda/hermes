@@ -5,6 +5,7 @@ import json
 from typing import List
 from hashlib import sha1
 
+
 start = time.time()
 cwd = os.getcwd()
 sysargs = sys.argv
@@ -29,8 +30,6 @@ template = {
     "output" : "",
 }
 
-changedfiles = []
-
 projecthermes = template.copy()
 
 
@@ -53,11 +52,9 @@ if (opt == '-Ofast') and verbose:
     )
 
 
+def fixfolderstructure(folder : str):
 
-def fixfolderstructure():
-    global cwd
-
-    try : os.mkdir(f"{cwd}/.hermes")
+    try : os.mkdir(f"{folder}/.hermes")
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -65,7 +62,7 @@ def fixfolderstructure():
         )
         sys.exit(1)
     
-    try : os.mkdir(f"{cwd}/.hermes/objs")
+    try : os.mkdir(f"{folder}/.hermes/objs")
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -73,7 +70,7 @@ def fixfolderstructure():
         )
         sys.exit(1)
     
-    try : os.mkdir(f"{cwd}/.hermes/debug")
+    try : os.mkdir(f"{folder}/.hermes/debug")
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -86,7 +83,7 @@ def processglobalcommand(index : int):
     Processes the global command line args passed into hermes
     Index is the index of 'global' keyword in the commandline args.
     """
-    global start, cwd, sysargs, superverbose, verbose, platform, template, macfolder, winfolder, linfolder
+    # global start, cwd, sysargs, superverbose, verbose, platform, template, macfolder, winfolder, linfolder
 
     op, key, value = None, sysargs[index], None
     
@@ -164,17 +161,16 @@ def processglobalcommand(index : int):
                         "Globals generated successfully" + colorama.Style.RESET_ALL)
         sys.exit(0)
 
-def inithermesproject():
-    global cwd
+def inithermesproject(folder : str):
     #make hermes json
-    with open(f'{cwd}/hermes.json', 'w') as file:
+    with open(f'{folder}/hermes.json', 'w') as file:
         file.write(json.dumps(template, indent = 4))
     
     #making folders for hermes stuff
-    fixfolderstructure()
+    fixfolderstructure(folder)
 
     #trackers file
-    with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+    with open(f'{folder}/.hermes/tracker.json', 'w') as file:
         file.write("{}")
     
     print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
@@ -186,23 +182,18 @@ def fitspattern(string : str, pattern : str) -> bool:
     splat = pattern.split('*')
     l = len(splat) - 1
 
-    # print(splat)
 
     for i, each in enumerate(splat):
         if not each : continue
-        # print(f"searching for {each} in {string}")
         if each in string:
-            # print("found")
             ind = string.index(each)
             if i == 0:
                 if pattern[0] != '*':
                     if ind != 0:
-                        # print("exiting there")
                         return False
             if i == l:
                 if pattern[-1] != '*':
                     if ind != (len(string) - len(each)):
-                        # print("exiting here")
                         return False
             string = string[ind + len(each):]
         else:
@@ -211,7 +202,6 @@ def fitspattern(string : str, pattern : str) -> bool:
     return True
 
 def getallmatchingin(dir : str, pattern : str) -> List[str]:
-    # print('received:', dir, 'pattern:', pattern)
     stuff = os.listdir(dir)
     if pattern == '*':
         matching = stuff
@@ -221,9 +211,6 @@ def getallmatchingin(dir : str, pattern : str) -> List[str]:
     files = list(filter(lambda x: os.path.isfile(f"{dir}/{x}"), stuff))
     dirs = list(filter(lambda x: os.path.isdir(f"{dir}/{x}"), stuff))
 
-    # print(stuff)
-    # print(files)
-    # print(dirs)
 
     matching = []
 
@@ -236,10 +223,9 @@ def getallmatchingin(dir : str, pattern : str) -> List[str]:
 
     return matching
 
-def processpathsetting(path : str) -> List[str]:
-    # print("received:", path)
+def processpathsetting(folder : str, path : str) -> List[str]:
     if './' == path[:2]:
-        path = f"{cwd}/{path[2:]}"
+        path = f"{folder}/{path[2:]}"
     
     path = "/".join(path.split('\\')).split('/')
     processed = []
@@ -263,10 +249,8 @@ def processpathsetting(path : str) -> List[str]:
             if i < (len(path) - 1):
                 each += '/'
                 later = '/'.join(path[i + 1:])
-                # print("processing:", each, "dir:", dir, "later:", later)
                 paths = list(map(lambda x: f"{x}/{later}", getallmatchingin(dir, each)))
             else:
-                # print("processing:", each, "dir:", dir)
                 paths = getallmatchingin(dir, each)
             break
 
@@ -274,14 +258,18 @@ def processpathsetting(path : str) -> List[str]:
     processed = []
 
     for each in paths:
-        processed += processpathsetting(each)
-    # print("paths:", paths)
-    # print("processed:", processed)
+        processed += processpathsetting(folder, each)
     return processed
 
-def combineglobals():
-    global projecthermes, macfolder, winfolder, linfolder
+def getfilename(path: str) -> str:
+    return path.split('/')[-1].split('\\')[-1]
 
+def getfilepath(path: str) -> str:
+    p = '/'.join(path.split('\\')).split('/')
+    if '.' in p[-1] : return '/'.join(p[:-1])
+    else : return '/'.join(p)
+
+def combineglobals():
     globals = None
     
     gfolder = macfolder
@@ -308,286 +296,283 @@ def combineglobals():
         else:
             projecthermes[each] = globals[each]
 
-def getfilename(path: str) -> str:
-    return path.split('/')[-1].split('\\')[-1]
-
 def getheaders(code : str) -> List[str]:
-    lines = (filter(lambda x: x, map(lambda x:x.strip(), code.strip().split('\n'))))
-
+    lines = list(filter(lambda x: x, map(lambda x:x.strip(), code.strip().split('\n'))))
     insidecomment = False
-    for i, each in lines:
+    for i, each in enumerate(lines):
         if '/*' in each:
+            # print('trigged here', i, each)
             insidecomment = True
             lines[i] = each[:each.index('/*')]
         elif '*/' in each:
+            # print('trigged there', i, each)
             insidecomment = False
             lines[i] = each[each.index('*/') + 2:]
         elif insidecomment:
+            # print('trigged where', i, each)
             lines[i] = ''
     
-    lines = filter(lambda x : x, lines)        
-
+    lines = list(filter(lambda x : x, lines))
     headers = []
     for each in lines:
         if ('#include' in each) and ('//' != each[:2]):
-            headers.append(each[len('#include'):].strip()[1:-1])
+            h = each[len('#include'):].strip()
+            if (h[0] == h[-1]) and (h[0] == '"') : headers.append(h[1:-1])
     return headers
 
-def trackfiles():
-    global projecthermes, changedfiles, verbose, superverbose, cwd
+def haschanged(filename : str, tracks : dict) -> bool:
+    if filename not in tracks: return True
 
-    headers = []
-    included = []
-
+    filehex = None
     try:
-        with open(f"{cwd}/.hermes/tracker.json", 'r') as file:
-            tracks = json.load(file)
-    except FileNotFoundError as e:
-        tracks = dict()
+        with open(filename, 'r') as file:
+            filehex = sha1(file.read().strip().encode()).hexdigest()
+    except Exception as e:
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT +
+            f'Error in reading file `{filename}`!'
+        )
+        return
     
-    for eachfile in projecthermes['inputs']:
-        filecontents = None
-        with open(eachfile, 'r') as file:
-            filecontents = file.read()
-        
-        hexcode = sha1(filecontents.strip().encode()).hexdigest()
-        
-        if eachfile not in tracks.keys():
-            tracks[eachfile] = hexcode
-            changedfiles.append(eachfile)
-            fileheaders = getheaders(filecontents)
-            for eachheader in fileheaders:
-                for folder in ([cwd] + projecthermes['includes']):
-                    if f"{folder}/{eachheader}" in tracks.keys():
-                        with open(f"{folder}/{eachheader}", 'r') as file:
-                            hashcode = sha1(file.read().strip().encode()).hexdigest()
-                        if eachfile not in tracks[f"{folder}/{eachheader}"]['files']:
-                            tracks[f"{folder}/{eachheader}"]['files'].append(eachfile)
-                        if hashcode != tracks[f"{folder}/{eachheader}"]['hash']:
-                            tracks[f"{folder}/{eachheader}"]['hash'] = hashcode
-                            if verbose:
-                                print(colorama.Style.BRIGHT +
-                                    f"Updating header track `{folder}/{eachheader}`" +
-                                    colorama.Style.RESET_ALL)
-                            changedfiles += list(filter(lambda x: x not in changedfiles,
-                                                        tracks[f"{folder}/{eachheader}"]['files']))
-                    else:
-                        try:
-                            with open(f"{folder}/{eachheader}", 'r') as file:
-                                hashcode = sha1(file.read().strip().encode()).hexdigest()
-                            if verbose:
-                                print(colorama.Style.BRIGHT +
-                                    f"Updating header track `{folder}/{eachheader}`" +
-                                    colorama.Style.RESET_ALL)
-                            tracks[f"{folder}/{eachheader}"] = {
-                                "hash" : hashcode,
-                                "files" : [eachfile]
-                            }
-                        except FileNotFoundError : pass
-            
-        else:
-            if tracks[eachfile] != hexcode:
-                tracks[eachfile] = hexcode
-                changedfiles.append(eachfile)
-                fileheaders = getheaders(filecontents)
-                for each in fileheaders:
-                    if each not in included:
-                        included.append(each)
-                        headers.append((eachfile, each))
+    if tracks[filename] != filehex : return True
 
-                fileheaders = getheaders(filecontents)
-                for eachheader in fileheaders:
-                    for folder in ([cwd] + projecthermes['includes']):
-                        if f"{folder}/{eachheader}" in tracks.keys():
-                            with open(f"{folder}/{eachheader}", 'r') as file:
-                                hashcode = sha1(file.read().strip().encode()).hexdigest()
-                            if eachfile not in tracks[f"{folder}/{eachheader}"]['files']:
-                                tracks[f"{folder}/{eachheader}"]['files'].append(eachfile)
-                            if hashcode != tracks[f"{folder}/{eachheader}"]['hash']:
-                                tracks[f"{folder}/{eachheader}"]['hash'] = hashcode
-                                if verbose:
-                                    print(colorama.Style.BRIGHT +
-                                        f"Updating header `{folder}/{eachheader}`" +
-                                        colorama.Style.RESET_ALL)
-                                changedfiles += list(filter(lambda x: x not in changedfiles,
-                                                            tracks[f"{folder}/{eachheader}"]['files']))
-                        else:
-                            try:
-                                with open(f"{folder}/{eachheader}", 'r') as file:
-                                    hashcode = sha1(file.read().strip().encode()).hexdigest()
-                                if verbose:
-                                    print(colorama.Style.BRIGHT +
-                                    f"Updating header track `{folder}/{eachheader}`" +
-                                    colorama.Style.RESET_ALL)
-                                tracks[f"{folder}/{eachheader}"] = {
-                                    "hash" : hashcode,
-                                    "files" : [eachfile]
-                                }
-                            except FileNotFoundError : pass
+    with open(filename, 'r') as file:
+        heads = getheaders(file.read().strip())
+
+    path = getfilepath(filename)
+    heads = list(map(
+        lambda x : f"{path}/{x}",
+        heads
+    ))
+
+    heads = list(map(
+        lambda x : haschanged(x, tracks),
+        heads
+    ))
+
+    # for each in heads:
+    #     if haschanged(each, tracks):
+    #         with open() as file:
+    #             tracks[each] = sha1(file.read().strip().encode()).hexdigest()
     
-    dellater = []
-    for eachtrack in tracks.keys():
-        if type(tracks[eachtrack]) == dict:
-            try:
-                with open(eachtrack, 'r') as file:
-                    hashcode = sha1(file.read().strip().encode()).hexdigest()
-            except FileNotFoundError:
-                if verbose: print(colorama.Style.DIM + f"Removing tracks for deleted file `{eachtrack}`..." +
-                                  colorama.Style.RESET_ALL)
-                dellater.append(eachtrack)
-                continue
-            if tracks[eachtrack]['hash'] != hashcode:
-                tracks[eachtrack]['hash'] = hashcode
-                if verbose:
-                    print(colorama.Style.BRIGHT +
-                        f"Updating header track `{eachtrack}`" +
-                        colorama.Style.RESET_ALL)
-                changedfiles += list(filter(lambda x: (x not in changedfiles) and (x in projecthermes['inputs']),
-                                            tracks[eachtrack]['files']))
-    for eachdel in dellater:
-        del tracks[eachdel]
+    # return (heads != [])
 
-    if verbose:
-        for eachfile in changedfiles:
-            print(
-                colorama.Fore.GREEN + f"Updating objs for `{eachfile}`" + colorama.Style.RESET_ALL
-            )
-
-    if superverbose:print(json.dumps(tracks, indent = 4))
-
-    with open(f"{cwd}/.hermes/tracker.json", 'w') as file:
-        file.write(json.dumps(tracks, indent = 4))
-
-def updateobjs():
-    global projecthermes, cwd, changedfiles, start, verbose, superverbose, opt
-
-    slash = ord('\\')
-
-    includesection = " ".join(
-        list(map(
-            lambda x: f'-I"{x if (x[-1] != "/") and (x[-1] != chr(slash)) else x[:-1]}"' if x else '',
-            projecthermes['includes']
-        ))
-    )
-
-    if superverbose:
-        print("includesection:")
-        print(includesection)
-        print("changedfiles:")
-        print(changedfiles)
-
-
-    for each in changedfiles:
-        if verbose:
-            print(colorama.Fore.GREEN + colorama.Style.BRIGHT +
-                f"Compiling object for `{getfilename(each)}`" + colorama.Style.RESET_ALL)
-        comm = f"{projecthermes['compiler']} -c {each} -o {cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o {includesection} {opt}"
-        if superverbose:
-            print(comm)
-        c = os.system(comm)
-        if c:
-            print(colorama.Fore.RED + colorama.Style.BRIGHT +
-                  f"Build failed in {str(time.time() - start)[:4]}s with exit code {c}!"
-                  + colorama.Style.RESET_ALL)
-            with open(f"{cwd}/.hermes/tracker.json", 'r') as file:
-                tracks = json.load(file)
-            del tracks[each]
-            with open(f"{cwd}/.hermes/tracker.json", 'w') as file:
-                file.write(json.dumps(tracks, indent = 4))
-            sys.exit(1)
-
-def buildfinalapp():
-    global projecthermes, cwd, opt
-
-    finalcommand = f"{projecthermes['compiler']} "
-
-    for each in projecthermes['inputs']:
-        finalcommand += f"{cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o "
+    for each in heads:
+        if each : return True
     
-    flags = projecthermes['flags']
-    flags = " ".join(flags)
+    return False
 
-    finalcommand += f"-o {cwd}/.hermes/debug/{projecthermes['output']} {flags} {opt}"
-
-    if superverbose:
-        print("Final command:")
-        print(finalcommand)
+def updatetracks(filename : str, tracks : dict) -> dict:
+    filehex = None
+    try:
+        with open(filename, 'r') as file:
+            filehex = sha1(file.read().strip().encode()).hexdigest()
+    except Exception as e:
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT +
+            f'Error in reading file `{filename}`!'
+        )
+        return
     
-    c = os.system(finalcommand)
-    if c:
-        end = time.time()
-        print(colorama.Style.BRIGHT + colorama.Fore.RED +
-                f"Compilation Failed! Build failed in {str(end - start)[:4]}s" + colorama.Style.RESET_ALL)
-        print(colorama.Style.DIM + colorama.Fore.RED +
-                f"This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added." + colorama.Style.RESET_ALL)
-        sys.exit(1)
-    else:
-        end = time.time()
-        print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
-                f"Compilation Successful! Build succeeded in {str(end - start)[:4]}s\n" + colorama.Style.RESET_ALL)
+    tracks[filename] = filehex
+
+    with open(filename, 'r') as file:
+        heads = getheaders(file.read().strip())
+
+    path = getfilepath(filename)
+    heads = list(map(
+        lambda x : (f"{path}/{x}"),
+        heads
+    ))
+
+    for eachhead in heads:
+        updatetracks(eachhead, tracks)
+
+def makeobj(filename : str, settings : dict) -> int:
+    command = f"{settings['compiler']} -o {cwd}/.hermes/objs/{getfilename(filename).split('.')[0]}.o -c {filename} "
+    for each in settings['includes']:
+        command += f" -I {each} "
+    command += ' '.join(settings['flags'])
+    command += f' {opt} '
+
+
+    if os.system(command):
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT + 
+            f"Compilation error in `{filename}`!" + colorama.Style.RESET_ALL
+        )
+        print()
+        return 1
+    return 0
 
 
 
 
-#process global command if any
+
+
+
+
+
+
+
+
+
+
+#dealing with global commands
 if 'global' in sysargs:
     processglobalcommand(sysargs.index('global'))
     sys.exit(0)
 
-#initialising hermes
-if 'hermes.json' not in os.listdir(cwd):
-    inithermesproject()
+#checking if hermes has been initialised. if not, then initialise.
+projecthermes = dict()
+try:
+    with open(f'{cwd}/hermes.json', 'r') as file : projecthermes = json.load(file)
+except FileNotFoundError:
+    inithermesproject(cwd)
+    sys.exit(0)
+except json.decoder.JSONDecodeError:
+    print(
+        colorama.Fore.RED + "Invalid hermes JSON file!" + colorama.Style.RESET_ALL
+    )
     sys.exit(0)
 
-fixfolderstructure()
-
-with open(f"{cwd}/hermes.json", 'r') as file:
-    projecthermes = json.load(file)
-if not projecthermes['compiler']:
-    projecthermes['compiler'] = 'c++'
-projecthermes['inputs'] = list(filter(lambda x:x, projecthermes['inputs']))
 if not projecthermes['inputs']:
     print(
-        colorama.Fore.RED + colorama.Style.BRIGHT + 
-        "Error! No input files provided!" + colorama.Style.RESET_ALL
+        colorama.Fore.RED + colorama.Style.BRIGHT + "No input files provided!" +
+        colorama.Style.RESET_ALL
+    )
+    sys.exit(0)
+
+#dealing with wildcards, spicy paths etc.
+for each in projecthermes.keys():
+    if type(template[each]) == list:
+        processed = []
+        for x in projecthermes[each]:
+            processed += processpathsetting(cwd, x)
+        projecthermes[each] = processed
+
+
+#defaults here
+if (not 'output' in projecthermes.keys()) or (not projecthermes['output']):
+    defaultname = getfilename(projecthermes['inputs'][0]).split('.')[0]
+    projecthermes['output'] = f"{cwd}/.hermes/debug/{defaultname}_output"
+
+if (not 'flags' in projecthermes.keys()) or (not projecthermes['flags']):
+    projecthermes['flags'] = []
+
+if (not 'run' in projecthermes.keys()) or (not projecthermes['run']):
+    projecthermes['run'] = False
+
+if (not 'includes' in projecthermes.keys()) or (not projecthermes['includes']):
+    projecthermes['includes'] = []
+
+if (not 'compiler' in projecthermes.keys()) or (not projecthermes['compiler']):
+    projecthermes['compiler'] = 'g++'
+
+#adding globals
+combineglobals()
+
+if superverbose : print(json.dumps(projecthermes, indent=4))
+
+#reading tracks
+tracks = dict()
+try:
+    with open(f'{cwd}/.hermes/tracker.json', 'r') as file:
+        tracks = json.load(file)
+except:
+    print(
+        colorama.Fore.YELLOW + 'Error reading tracker.json, using empty tracks...' +
+        colorama.Style.RESET_ALL
+    )
+
+changedfiles = list(filter(
+    lambda x : haschanged(x, tracks),
+    projecthermes['inputs']
+))
+
+allok = True
+for each in changedfiles:
+    if verbose:
+        print(
+            colorama.Fore.LIGHTGREEN_EX +
+            f"Changes detected in `{each}`..." + colorama.Style.RESET_ALL
+        )
+
+    if makeobj(each, projecthermes):
+        allok = False
+    else:
+        if verbose:
+            print(
+                colorama.Fore.GREEN +
+                f"Updating objs for `{each}`..." + colorama.Style.RESET_ALL
+            )
+        updatetracks(each, tracks)
+    
+    if superverbose : print(json.dumps(tracks, indent = 4))
+
+
+
+linkercommand = f"{projecthermes['compiler']} -o {projecthermes['output']} "
+for each in projecthermes['inputs']:
+    linkercommand += f" {cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o "
+linkercommand += ' '.join(projecthermes['flags'])
+linkercommand += f' {opt} '
+
+if superverbose:
+    print("Linker command:")
+    print(linkercommand)
+
+if allok:
+    if os.system(linkercommand):
+        allok = False
+        print(
+            colorama.Fore.RED + colorama.Style.DIM +
+            "This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added."+
+            colorama.Style.RESET_ALL
+        )
+
+
+end = time.time()
+if allok:
+    try:
+        with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+            file.write(json.dumps(tracks, indent = 4))
+    except:
+        fixfolderstructure(cwd)
+        with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+            file.write(json.dumps(tracks, indent = 4))
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.GREEN +
+        f"Build complete successfully! Compilation completed in {str(end - start)[:4]}s!" +
+        colorama.Style.RESET_ALL
+    )
+else:
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.RED +
+        f"Build failed! Compilation completed in {str(end - start)[:4]}s!" +
+        colorama.Style.RESET_ALL
     )
     sys.exit(1)
 
-combineglobals()
 
-#deal with wildcards and stuff
-for each in projecthermes.keys():
-    if type(projecthermes[each]) == list:
-        processed = []
-        for string in projecthermes[each]:
-            processed += processpathsetting(string)
-        projecthermes[each] = processed
-
-if not projecthermes['output']:
-    projecthermes['output'] = f"{getfilename(projecthermes['inputs'][0]).split('.')[0]}_output"
-
-if superverbose:print(json.dumps(projecthermes, indent = 4))
-
-#track file changes
-if ('-redo' not in sysargs) and ('-force' not in sysargs) : trackfiles()
-else : changedfiles = projecthermes['inputs']
-
-
-#compile to objs
-updateobjs()
-
-#build final executable
-buildfinalapp()
-
-#run auto
 if projecthermes['run']:
     start = time.time()
-    if platform == 'win':c = os.system(f"{cwd}/.hermes/debug/{projecthermes['output']}.exe")
-    if platform == 'lin':c = os.system(f"{cwd}/.hermes/debug/{projecthermes['output']}")
-    end = time.time()
-    
-    print(f"\nExecution finished with " + 
-          (colorama.Fore.GREEN if not c else colorama.Fore.RED) + f"exit code {c}" +
-          colorama.Style.RESET_ALL + 
-          f" in {str(end-start)[:4]}s!")
+    print(
+        colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+        "Running app..." +
+        colorama.Style.RESET_ALL
+    )
+    print()
 
+    try:
+        code = os.system(projecthermes['output'])
+    except KeyboardInterrupt:
+        pass
+
+    end = time.time()
+    print()
+    print(
+        colorama.Style.DIM + colorama.Fore.YELLOW +
+        f"Execution finished with {(colorama.Fore.RED if code else colorama.Fore.GREEN) + colorama.Style.NORMAL + ('exit code ' + str(code)) + colorama.Style.DIM + colorama.Fore.YELLOW} in {str(end - start)[:4]}s!" +
+        colorama.Style.RESET_ALL
+    )
