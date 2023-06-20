@@ -58,7 +58,7 @@ def fixfolderstructure(folder : str):
     except FileExistsError : pass
     except Exception as e:
         print(
-            colorama.Fore.RED + "Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
+            colorama.Fore.RED + "❌Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
         )
         sys.exit(1)
     
@@ -66,7 +66,7 @@ def fixfolderstructure(folder : str):
     except FileExistsError : pass
     except Exception as e:
         print(
-            colorama.Fore.RED + "Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
+            colorama.Fore.RED + "❌Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
         )
         sys.exit(1)
     
@@ -74,7 +74,7 @@ def fixfolderstructure(folder : str):
     except FileExistsError : pass
     except Exception as e:
         print(
-            colorama.Fore.RED + "Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
+            colorama.Fore.RED + "❌Error in fixing folder structure!\n" + str(e) + colorama.Style.RESET_ALL
         )
         sys.exit(1)
 
@@ -95,12 +95,12 @@ def processglobalcommand(index : int):
     except IndexError:
         if superverbose:print(sysargs)
         print(colorama.Fore.RED + colorama.Style.BRIGHT + 
-              "Invalid syntax for changing globals!" + colorama.Style.RESET_ALL)
+              "❌Invalid syntax for changing globals!" + colorama.Style.RESET_ALL)
         sys.exit(1)
     
     if (op != 'show') and (key not in template.keys()):
         print(colorama.Fore.RED + colorama.Style.BRIGHT +
-                f'"{key}" is not a valid key for global config!' + colorama.Style.RESET_ALL)
+                f'🙅"{key}" is not a valid key for global config!' + colorama.Style.RESET_ALL)
         sys.exit(1)
 
     #setting default values
@@ -130,7 +130,7 @@ def processglobalcommand(index : int):
                 file.write(json.dumps(original, indent=4))
                 
                 print(colorama.Fore.GREEN + colorama.Style.BRIGHT + 
-                "Value changed successfully" + colorama.Style.RESET_ALL)
+                "👌Value changed successfully" + colorama.Style.RESET_ALL)
                 sys.exit(0)
             elif (op == 'append'):
                 try:
@@ -139,12 +139,12 @@ def processglobalcommand(index : int):
                     file.write(json.dumps(original, indent=4))
                     
                     print(colorama.Fore.GREEN + colorama.Style.BRIGHT + 
-                        "Value appended successfully" + colorama.Style.RESET_ALL)
+                        "👌Value appended successfully" + colorama.Style.RESET_ALL)
                     sys.exit(0)
                 except AttributeError as e:
                     print(e)
                     print(colorama.Fore.RED + colorama.Style.BRIGHT +
-                        "Appending not supported on the given key!" + colorama.Style.RESET_ALL)
+                        "🙅Appending not supported on the given key!" + colorama.Style.RESET_ALL)
                     sys.exit(1)
             elif (op == 'show'):
                 print(json.dumps(original, indent = 4))
@@ -158,7 +158,7 @@ def processglobalcommand(index : int):
             newfile.write(json.dumps(original, indent=4))
 
         print(colorama.Fore.GREEN + colorama.Style.BRIGHT + 
-                        "Globals generated successfully" + colorama.Style.RESET_ALL)
+                        "👌Globals generated successfully" + colorama.Style.RESET_ALL)
         sys.exit(0)
 
 def inithermesproject(folder : str):
@@ -174,7 +174,7 @@ def inithermesproject(folder : str):
         file.write("{}")
     
     print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
-          "Hermes project initialised successfully!" + colorama.Style.RESET_ALL)
+          "👌Hermes project initialised successfully!" + colorama.Style.RESET_ALL)
 
 def fitspattern(string : str, pattern : str) -> bool:
     if pattern == '*': return True
@@ -330,7 +330,7 @@ def haschanged(filename : str, tracks : dict) -> bool:
     except Exception as e:
         print(
             colorama.Fore.RED + colorama.Style.BRIGHT +
-            f'Error in reading file `{filename}`!'
+            f'🔍Error in reading file `{filename}`!'
         )
         return
     
@@ -370,7 +370,7 @@ def updatetracks(filename : str, tracks : dict) -> dict:
     except Exception as e:
         print(
             colorama.Fore.RED + colorama.Style.BRIGHT +
-            f'Error in reading file `{filename}`!'
+            f'🔍Error in reading file `{filename}`!'
         )
         return
     
@@ -399,7 +399,7 @@ def makeobj(filename : str, settings : dict) -> int:
     if os.system(command):
         print(
             colorama.Fore.RED + colorama.Style.BRIGHT + 
-            f"Compilation error in `{filename}`!" + colorama.Style.RESET_ALL
+            f"❌Compilation error in `{filename}`!" + colorama.Style.RESET_ALL
         )
         print()
         return 1
@@ -432,13 +432,13 @@ except FileNotFoundError:
     sys.exit(0)
 except json.decoder.JSONDecodeError:
     print(
-        colorama.Fore.RED + "Invalid hermes JSON file!" + colorama.Style.RESET_ALL
+        colorama.Fore.RED + "❌Invalid hermes JSON file!" + colorama.Style.RESET_ALL
     )
     sys.exit(0)
 
 if not projecthermes['inputs']:
     print(
-        colorama.Fore.RED + colorama.Style.BRIGHT + "No input files provided!" +
+        colorama.Fore.RED + colorama.Style.BRIGHT + "🤷No input files provided!" +
         colorama.Style.RESET_ALL
     )
     sys.exit(0)
@@ -481,7 +481,7 @@ try:
         tracks = json.load(file)
 except:
     print(
-        colorama.Fore.YELLOW + 'Error reading tracker.json, using empty tracks...' +
+        colorama.Fore.YELLOW + '🔍Error reading tracker.json, using empty tracks...' +
         colorama.Style.RESET_ALL
     )
 
@@ -490,12 +490,14 @@ changedfiles = list(filter(
     projecthermes['inputs']
 ))
 
+if ('-redo' in sysargs) or ('-force' in sysargs): changedfiles = projecthermes['inputs']
+
 allok = True
 for each in changedfiles:
     if verbose:
         print(
             colorama.Fore.LIGHTGREEN_EX +
-            f"Changes detected in `{each}`..." + colorama.Style.RESET_ALL
+            f"📄Changes detected in `{each}`..." + colorama.Style.RESET_ALL
         )
 
     if makeobj(each, projecthermes):
@@ -504,7 +506,7 @@ for each in changedfiles:
         if verbose:
             print(
                 colorama.Fore.GREEN +
-                f"Updating objs for `{each}`..." + colorama.Style.RESET_ALL
+                f"🪶Updating objs for `{each}`..." + colorama.Style.RESET_ALL
             )
         updatetracks(each, tracks)
     
@@ -527,7 +529,7 @@ if allok:
         allok = False
         print(
             colorama.Fore.RED + colorama.Style.DIM +
-            "This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added."+
+            "🔗This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added."+
             colorama.Style.RESET_ALL
         )
 
@@ -543,13 +545,13 @@ if allok:
             file.write(json.dumps(tracks, indent = 4))
     print(
         colorama.Style.BRIGHT + colorama.Fore.GREEN +
-        f"Build complete successfully! Compilation completed in {str(end - start)[:4]}s!" +
+        f"👍Build complete successfully! Compilation completed in {str(end - start)[:4]}s!" +
         colorama.Style.RESET_ALL
     )
 else:
     print(
         colorama.Style.BRIGHT + colorama.Fore.RED +
-        f"Build failed! Compilation completed in {str(end - start)[:4]}s!" +
+        f"🤮Build failed! Compilation completed in {str(end - start)[:4]}s!" +
         colorama.Style.RESET_ALL
     )
     sys.exit(1)
@@ -559,7 +561,7 @@ if projecthermes['run']:
     start = time.time()
     print(
         colorama.Style.BRIGHT + colorama.Fore.YELLOW +
-        "Running app..." +
+        "🏃Running app..." +
         colorama.Style.RESET_ALL
     )
     print()
@@ -573,6 +575,6 @@ if projecthermes['run']:
     print()
     print(
         colorama.Style.DIM + colorama.Fore.YELLOW +
-        f"Execution finished with {(colorama.Fore.RED if code else colorama.Fore.GREEN) + colorama.Style.NORMAL + ('exit code ' + str(code)) + colorama.Style.DIM + colorama.Fore.YELLOW} in {str(end - start)[:4]}s!" +
+        f"🏁Execution finished with {(colorama.Fore.RED if code else colorama.Fore.GREEN) + colorama.Style.NORMAL + ('exit code ' + str(code)) + colorama.Style.DIM + colorama.Fore.YELLOW} in {str(end - start)[:4]}s!" +
         colorama.Style.RESET_ALL
     )
