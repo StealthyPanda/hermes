@@ -484,6 +484,7 @@ except:
         colorama.Fore.YELLOW + '🔍Error reading tracker.json, using empty tracks...' +
         colorama.Style.RESET_ALL
     )
+    fixfolderstructure(cwd)
 
 changedfiles = list(filter(
     lambda x : haschanged(x, tracks),
