@@ -436,12 +436,35 @@ except json.decoder.JSONDecodeError:
     )
     sys.exit(0)
 
+if '-r' in sysargs:
+    try:
+        projecthermes['inputs'] = [sysargs[sysargs.index('-r') + 1]]
+    except IndexError:
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+            colorama.Style.RESET_ALL
+        )
+        sys.exit(0)
+
+if '-run' in sysargs:
+    try:
+        projecthermes['inputs'] = [sysargs[sysargs.index('-run') + 1]]
+    except IndexError:
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+            colorama.Style.RESET_ALL
+        )
+        sys.exit(0)
+
 if not projecthermes['inputs']:
     print(
         colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files provided!" +
         colorama.Style.RESET_ALL
     )
     sys.exit(0)
+
+
+
 
 #dealing with wildcards, spicy paths etc.
 for each in projecthermes.keys():
@@ -560,11 +583,18 @@ else:
 
 if projecthermes['run']:
     start = time.time()
-    print(
-        colorama.Style.BRIGHT + colorama.Fore.YELLOW +
-        "🏃 Running app..." +
-        colorama.Style.RESET_ALL
-    )
+    if ('-r' in sysargs) or ('-run' in sysargs): 
+        print(
+            colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+            f"🏃 Running `{getfilename(projecthermes['inputs'][0])}`..." +
+            colorama.Style.RESET_ALL
+        )
+    else:
+        print(
+            colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+            f"🏃 Running app..." +
+            colorama.Style.RESET_ALL
+        )
     print()
 
     try:
