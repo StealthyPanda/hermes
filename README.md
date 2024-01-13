@@ -7,12 +7,6 @@ A python based light-weight build system for C/C++, with an emphasis on simplici
 
 </div>
 
-<!-- <div align = "center">
-
-[![GitHub Stars](https://img.shields.io/github/stars/stealthypanda/hermes.svg)](https://github.com/stealthypanda/hermes/stargazers)
-[![Status](https://img.shields.io/badge/status-active-success.svg)]()[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)![GitHub release (latest by date)](https://img.shields.io/github/v/release/stealthypanda/hermes)
-
-</div> -->
 
 ## Setup
 
