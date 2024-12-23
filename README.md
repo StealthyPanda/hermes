@@ -12,24 +12,14 @@ A python based light-weight build system for C/C++, with an emphasis on simplici
 
 ### Dependencies
 
-Requires python, and `pip` and `pyinstaller` installed. To install `pyinstaller`, run:
-```bash
-pip install pyinstaller
-```
+Requires python, install from [here](https://www.python.org/downloads/).
 
 ### Installation
 
-*For windows x86_64, direct binaries can be downloaded from [here](https://github.com/StealthyPanda/hermes/releases/tag/v1.1)*
-
-Download this repo as a zip file or clone it to you machine. In the main project directory, run:
+Install using `pip`:
 ```bash
-pyinstaller hermes.py
+pip install git+https://github.com/StealthyPanda/hermes.git
 ```
-or
-```bash
-python -m pyinstaller hermes.py
-```
-Next, add the generated `dist/hermes` folder to the system's `PATH` environment variable. Hermes is now set up.
 
 
 # Usage
@@ -56,7 +46,7 @@ The JSON file controls the following (and only) settings for building the projec
 Finally, to get verbose output, run:
 
 ```bash
-hermes -v (for verbose) | -vv (for super verbose)
+hermes -v # (for verbose) | -vv (for super verbose)
 ```
 and see the final compiler command.
 

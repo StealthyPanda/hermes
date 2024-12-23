@@ -417,195 +417,196 @@ def makeobj(filename : str, settings : dict) -> int:
 
 
 
+def main():
+    #dealing with global commands
+    if 'global' in sysargs:
+        processglobalcommand(sysargs.index('global'))
+        sys.exit(0)
 
-#dealing with global commands
-if 'global' in sysargs:
-    processglobalcommand(sysargs.index('global'))
-    sys.exit(0)
-
-#checking if hermes has been initialised. if not, then initialise.
-projecthermes = dict()
-try:
-    with open(f'{cwd}/hermes.json', 'r') as file : projecthermes = json.load(file)
-except FileNotFoundError:
-    inithermesproject(cwd)
-    sys.exit(0)
-except json.decoder.JSONDecodeError:
-    print(
-        colorama.Fore.RED + "❌ Invalid hermes JSON file!" + colorama.Style.RESET_ALL
-    )
-    sys.exit(0)
-
-if '-r' in sysargs:
+    #checking if hermes has been initialised. if not, then initialise.
+    projecthermes = dict()
     try:
-        projecthermes['inputs'] = [sysargs[sysargs.index('-r') + 1]]
-    except IndexError:
+        with open(f'{cwd}/hermes.json', 'r') as file : projecthermes = json.load(file)
+    except FileNotFoundError:
+        inithermesproject(cwd)
+        sys.exit(0)
+    except json.decoder.JSONDecodeError:
         print(
-            colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+            colorama.Fore.RED + "❌ Invalid hermes JSON file!" + colorama.Style.RESET_ALL
+        )
+        sys.exit(0)
+
+    if '-r' in sysargs:
+        try:
+            projecthermes['inputs'] = [sysargs[sysargs.index('-r') + 1]]
+        except IndexError:
+            print(
+                colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+                colorama.Style.RESET_ALL
+            )
+            sys.exit(0)
+
+    if '-run' in sysargs:
+        try:
+            projecthermes['inputs'] = [sysargs[sysargs.index('-run') + 1]]
+        except IndexError:
+            print(
+                colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+                colorama.Style.RESET_ALL
+            )
+            sys.exit(0)
+
+    if not projecthermes['inputs']:
+        print(
+            colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files provided!" +
             colorama.Style.RESET_ALL
         )
         sys.exit(0)
 
-if '-run' in sysargs:
+
+
+
+    #dealing with wildcards, spicy paths etc.
+    for each in projecthermes.keys():
+        if type(template[each]) == list:
+            processed = []
+            for x in projecthermes[each]:
+                processed += processpathsetting(cwd, x)
+            projecthermes[each] = processed
+
+
+    #defaults here
+    if (not 'output' in projecthermes.keys()) or (not projecthermes['output']):
+        defaultname = getfilename(projecthermes['inputs'][0]).split('.')[0]
+        projecthermes['output'] = f"{cwd}/.hermes/debug/{defaultname}_output"
+
+    if (not 'flags' in projecthermes.keys()) or (not projecthermes['flags']):
+        projecthermes['flags'] = []
+
+    if (not 'run' in projecthermes.keys()) or (not projecthermes['run']):
+        projecthermes['run'] = False
+
+    if (not 'includes' in projecthermes.keys()) or (not projecthermes['includes']):
+        projecthermes['includes'] = []
+
+    if (not 'compiler' in projecthermes.keys()) or (not projecthermes['compiler']):
+        projecthermes['compiler'] = 'g++'
+
+    #adding globals
+    combineglobals()
+
+    if superverbose : print(json.dumps(projecthermes, indent=4))
+
+    #reading tracks
+    tracks = dict()
     try:
-        projecthermes['inputs'] = [sysargs[sysargs.index('-run') + 1]]
-    except IndexError:
+        with open(f'{cwd}/.hermes/tracker.json', 'r') as file:
+            tracks = json.load(file)
+    except:
         print(
-            colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files to run!" +
+            colorama.Fore.YELLOW + '🔍Error reading tracker.json, using empty tracks...' +
             colorama.Style.RESET_ALL
         )
-        sys.exit(0)
+        fixfolderstructure(cwd)
 
-if not projecthermes['inputs']:
-    print(
-        colorama.Fore.RED + colorama.Style.BRIGHT + "🤷 No input files provided!" +
-        colorama.Style.RESET_ALL
-    )
-    sys.exit(0)
+    changedfiles = list(filter(
+        lambda x : haschanged(x, tracks),
+        projecthermes['inputs']
+    ))
 
+    if ('-redo' in sysargs) or ('-force' in sysargs): changedfiles = projecthermes['inputs']
 
-
-
-#dealing with wildcards, spicy paths etc.
-for each in projecthermes.keys():
-    if type(template[each]) == list:
-        processed = []
-        for x in projecthermes[each]:
-            processed += processpathsetting(cwd, x)
-        projecthermes[each] = processed
-
-
-#defaults here
-if (not 'output' in projecthermes.keys()) or (not projecthermes['output']):
-    defaultname = getfilename(projecthermes['inputs'][0]).split('.')[0]
-    projecthermes['output'] = f"{cwd}/.hermes/debug/{defaultname}_output"
-
-if (not 'flags' in projecthermes.keys()) or (not projecthermes['flags']):
-    projecthermes['flags'] = []
-
-if (not 'run' in projecthermes.keys()) or (not projecthermes['run']):
-    projecthermes['run'] = False
-
-if (not 'includes' in projecthermes.keys()) or (not projecthermes['includes']):
-    projecthermes['includes'] = []
-
-if (not 'compiler' in projecthermes.keys()) or (not projecthermes['compiler']):
-    projecthermes['compiler'] = 'g++'
-
-#adding globals
-combineglobals()
-
-if superverbose : print(json.dumps(projecthermes, indent=4))
-
-#reading tracks
-tracks = dict()
-try:
-    with open(f'{cwd}/.hermes/tracker.json', 'r') as file:
-        tracks = json.load(file)
-except:
-    print(
-        colorama.Fore.YELLOW + '🔍Error reading tracker.json, using empty tracks...' +
-        colorama.Style.RESET_ALL
-    )
-    fixfolderstructure(cwd)
-
-changedfiles = list(filter(
-    lambda x : haschanged(x, tracks),
-    projecthermes['inputs']
-))
-
-if ('-redo' in sysargs) or ('-force' in sysargs): changedfiles = projecthermes['inputs']
-
-allok = True
-for each in changedfiles:
-    if verbose:
-        print(
-            colorama.Fore.LIGHTGREEN_EX +
-            f"📄 Changes detected in `{each}`..." + colorama.Style.RESET_ALL
-        )
-
-    if makeobj(each, projecthermes):
-        allok = False
-    else:
+    allok = True
+    for each in changedfiles:
         if verbose:
             print(
-                colorama.Fore.GREEN +
-                f"🪶  Updating objs for `{each}`..." + colorama.Style.RESET_ALL
+                colorama.Fore.LIGHTGREEN_EX +
+                f"📄 Changes detected in `{each}`..." + colorama.Style.RESET_ALL
             )
-        updatetracks(each, tracks)
-    
-    if superverbose : print(json.dumps(tracks, indent = 4))
+
+        if makeobj(each, projecthermes):
+            allok = False
+        else:
+            if verbose:
+                print(
+                    colorama.Fore.GREEN +
+                    f"🪶  Updating objs for `{each}`..." + colorama.Style.RESET_ALL
+                )
+            updatetracks(each, tracks)
+        
+        if superverbose : print(json.dumps(tracks, indent = 4))
 
 
 
-linkercommand = f"{projecthermes['compiler']} -o {projecthermes['output']} "
-for each in projecthermes['inputs']:
-    linkercommand += f" {cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o "
-linkercommand += ' '.join(projecthermes['flags'])
-linkercommand += f' {opt} '
+    linkercommand = f"{projecthermes['compiler']} -o {projecthermes['output']} "
+    for each in projecthermes['inputs']:
+        linkercommand += f" {cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o "
+    linkercommand += ' '.join(projecthermes['flags'])
+    linkercommand += f' {opt} '
 
-if superverbose:
-    print("Linker command:")
-    print(linkercommand)
+    if superverbose:
+        print("Linker command:")
+        print(linkercommand)
 
-if allok:
-    if os.system(linkercommand):
-        allok = False
+    if allok:
+        if os.system(linkercommand):
+            allok = False
+            print(
+                colorama.Fore.RED + colorama.Style.DIM +
+                "🔗 This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added."+
+                colorama.Style.RESET_ALL
+            )
+
+
+    end = time.time()
+    if allok:
+        try:
+            with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+                file.write(json.dumps(tracks, indent = 4))
+        except:
+            fixfolderstructure(cwd)
+            with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
+                file.write(json.dumps(tracks, indent = 4))
         print(
-            colorama.Fore.RED + colorama.Style.DIM +
-            "🔗 This was a linker error, most likely caused by missing object (.a, .o), .dll, .lib or .cxx files.\nEnsure all headers have their corresponding declarations, and all library flags are added."+
-            colorama.Style.RESET_ALL
-        )
-
-
-end = time.time()
-if allok:
-    try:
-        with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
-            file.write(json.dumps(tracks, indent = 4))
-    except:
-        fixfolderstructure(cwd)
-        with open(f'{cwd}/.hermes/tracker.json', 'w') as file:
-            file.write(json.dumps(tracks, indent = 4))
-    print(
-        colorama.Style.BRIGHT + colorama.Fore.GREEN +
-        f"👍 Build complete successfully! Compilation completed in {str(end - start)[:4]}s!" +
-        colorama.Style.RESET_ALL
-    )
-else:
-    print(
-        colorama.Style.BRIGHT + colorama.Fore.RED +
-        f"🤮 Build failed! Compilation completed in {str(end - start)[:4]}s!" +
-        colorama.Style.RESET_ALL
-    )
-    sys.exit(1)
-
-
-if projecthermes['run']:
-    start = time.time()
-    if ('-r' in sysargs) or ('-run' in sysargs): 
-        print(
-            colorama.Style.BRIGHT + colorama.Fore.YELLOW +
-            f"🏃 Running `{getfilename(projecthermes['inputs'][0])}`..." +
+            colorama.Style.BRIGHT + colorama.Fore.GREEN +
+            f"👍 Build complete successfully! Compilation completed in {str(end - start)[:4]}s!" +
             colorama.Style.RESET_ALL
         )
     else:
         print(
-            colorama.Style.BRIGHT + colorama.Fore.YELLOW +
-            f"🏃 Running app..." +
+            colorama.Style.BRIGHT + colorama.Fore.RED +
+            f"🤮 Build failed! Compilation completed in {str(end - start)[:4]}s!" +
             colorama.Style.RESET_ALL
         )
-    print()
+        sys.exit(1)
 
-    try:
-        code = os.system(projecthermes['output'])
-    except KeyboardInterrupt:
-        pass
 
-    end = time.time()
-    print()
-    print(
-        colorama.Style.DIM + colorama.Fore.YELLOW +
-        f"🏁 Execution finished with {(colorama.Fore.RED if code else colorama.Fore.GREEN) + colorama.Style.NORMAL + ('exit code ' + str(code)) + colorama.Style.DIM + colorama.Fore.YELLOW} in {str(end - start)[:4]}s!" +
-        colorama.Style.RESET_ALL
-    )
+    if projecthermes['run']:
+        start = time.time()
+        if ('-r' in sysargs) or ('-run' in sysargs): 
+            print(
+                colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+                f"🏃 Running `{getfilename(projecthermes['inputs'][0])}`..." +
+                colorama.Style.RESET_ALL
+            )
+        else:
+            print(
+                colorama.Style.BRIGHT + colorama.Fore.YELLOW +
+                f"🏃 Running app..." +
+                colorama.Style.RESET_ALL
+            )
+        print()
+
+        try:
+            code = os.system(projecthermes['output'])
+        except KeyboardInterrupt:
+            pass
+
+        end = time.time()
+        print()
+        print(
+            colorama.Style.DIM + colorama.Fore.YELLOW +
+            f"🏁 Execution finished with {(colorama.Fore.RED if code else colorama.Fore.GREEN) + colorama.Style.NORMAL + ('exit code ' + str(code)) + colorama.Style.DIM + colorama.Fore.YELLOW} in {str(end - start)[:4]}s!" +
+            colorama.Style.RESET_ALL
+        )
+    
