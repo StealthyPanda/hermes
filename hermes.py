@@ -418,6 +418,9 @@ def makeobj(filename : str, settings : dict) -> int:
 
 
 def main():
+    global start, end
+    
+    
     #dealing with global commands
     if 'global' in sysargs:
         processglobalcommand(sysargs.index('global'))
