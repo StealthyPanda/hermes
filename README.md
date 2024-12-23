@@ -18,24 +18,14 @@ A python based light-weight build system for C/C++, with an emphasis on simplici
 
 ### Dependencies
 
-Requires python, and `pip` and `pyinstaller` installed. To install `pyinstaller`, run:
-```
-$ pip install pyinstaller
-```
+Requires python, install from [here](https://www.python.org/downloads/).
 
 ### Installation
 
-*For windows x86_64, direct binaries can be downloaded from [here](https://github.com/StealthyPanda/hermes/releases/tag/v1.1)*
-
-Download this repo as a zip file or clone it to you machine. In the main project directory, run:
+Install using `pip`:
+```bash
+pip install git+https://github.com/StealthyPanda/hermes.git
 ```
-$ pyinstaller hermes.py
-```
-or
-```
-$ python -m pyinstaller hermes.py
-```
-Next, add the generated `dist/hermes` folder to the system's `PATH` environment variable. Hermes is now set up.
 
 
 # Usage
@@ -43,8 +33,8 @@ Next, add the generated `dist/hermes` folder to the system's `PATH` environment 
 Any project can be turned into a hermes project by creating a single `hermes.json` JSON file in the root folder of the project. This file is the single source of controlling the build system, and contains all the build information.
 
 In the root folder of the project, open a terminal and run:
-```
-$ hermes
+```bash
+hermes
 ```
 or simply create an empty `hermes.json` file. To build the project, simply run `hermes` in terminal.
 <br>
@@ -61,14 +51,14 @@ The JSON file controls the following (and only) settings for building the projec
 
 Finally, to get verbose output, run:
 
-```
-$ hermes -v (for verbose) | -vv (for super verbose)
+```bash
+hermes -v # (for verbose) | -vv (for super verbose)
 ```
 and see the final compiler command.
 
 Hermes also has a global config file, which is stored at `C:\hermes` or `/etc/hermes`. To interact with this file through the terminal, use:
-```
-$ hermes global <operation> <key> <value>
+```bash
+hermes global <operation> <key> <value>
 ```
 where
 
@@ -82,8 +72,8 @@ Note: `show` requires no `key`/`value`, and a `value` of `.` sets it to empty.
 ### Build optimizations
 
 While these can be added as `flags`, optimizations can also be enabled for a single compilation by running:
-```
-$ hermes <opt>
+```bash
+hermes <opt>
 ```
 where `<opt>` can be
 - `-b` for O1 level

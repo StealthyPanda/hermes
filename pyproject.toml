@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "hermes"
+version = "1"
+description = "A build tool for C/C++."
+authors = ["StealthyPanda <shaikm259@gmail.com>"]
+license = "LICENSE"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+hermes = "hermes:main"
+
