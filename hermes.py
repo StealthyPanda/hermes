@@ -578,7 +578,7 @@ def main():
     else:
         print(
             colorama.Style.BRIGHT + colorama.Fore.RED +
-            f"🤮 Build failed! Compilation completed in {str(end - start)[:4]}s!" +
+            f"😰 Build failed! Compilation completed in {str(end - start)[:4]}s!" +
             colorama.Style.RESET_ALL
         )
         sys.exit(1)
