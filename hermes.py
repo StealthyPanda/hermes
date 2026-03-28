@@ -28,6 +28,9 @@ template = {
     "run" : False,
     "flags" : [],
     "output" : "",
+    'commands' : [],
+    'libs' : [],
+    'objects' : [],
 }
 
 projecthermes = template.copy()
@@ -51,10 +54,26 @@ if (opt == '-Ofast') and verbose:
         "最高(Saikou) mode enabled!\n⚡Applying fastest possible optimizations..." + colorama.Style.RESET_ALL
     )
 
+def run_commands(comms : list[str]) -> None:
+    for i, command in enumerate(comms):
+        if verbose: print(f'Running pre-command {i+1}/{len(comms)}...')
+        code = os.system(command)
+        if code != 0:
+            print(
+                colorama.Fore.RED + 
+                f"❌ Error in running pre-command; `{command}`!\n" + 
+                colorama.Style.RESET_ALL
+            )
+            break
+
+
+def join_path(*args) -> str:
+    return os.path.join(*args)
+
 
 def fixfolderstructure(folder : str):
 
-    try : os.mkdir(f"{folder}/.hermes")
+    try : os.mkdir(join_path(folder, ".hermes"))
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -62,7 +81,7 @@ def fixfolderstructure(folder : str):
         )
         sys.exit(1)
     
-    try : os.mkdir(f"{folder}/.hermes/objs")
+    try : os.mkdir(join_path(folder, '.hermes', 'objs'))
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -70,7 +89,7 @@ def fixfolderstructure(folder : str):
         )
         sys.exit(1)
     
-    try : os.mkdir(f"{folder}/.hermes/debug")
+    try : os.mkdir(join_path(folder, '.hermes', 'debug'))
     except FileExistsError : pass
     except Exception as e:
         print(
@@ -116,12 +135,14 @@ def processglobalcommand(index : int):
     original = template.copy()
     del original['output']
 
+    gfileloc = join_path(gfolder, 'globals.json')
+
     try:
-        with open(f"{gfolder}/globals.json", 'r') as file:
+        with open(gfileloc, 'r') as file:
             try : original = json.load(file)
             except Exception as e: pass
             
-        with open(f"{gfolder}/globals.json", 'w') as file:
+        with open(gfileloc, 'w') as file:
             if (op == 'change'):
                 if type(original[key]) == str : original[key] = value
                 elif type(original[key]) == list : original[key] = [value] if type(value) != list else value
@@ -154,7 +175,7 @@ def processglobalcommand(index : int):
         print(f"Globals folder does not exist yet, generating at {gfolder}...")
         
         os.mkdir(gfolder)
-        with open(f"{gfolder}/globals.json", 'w') as newfile:
+        with open(gfileloc, 'w') as newfile:
             newfile.write(json.dumps(original, indent=4))
 
         print(colorama.Fore.GREEN + colorama.Style.BRIGHT + 
@@ -163,14 +184,14 @@ def processglobalcommand(index : int):
 
 def inithermesproject(folder : str):
     #make hermes json
-    with open(f'{folder}/hermes.json', 'w') as file:
+    with open(join_path(folder, 'hermes.json'), 'w') as file:
         file.write(json.dumps(template, indent = 4))
     
     #making folders for hermes stuff
     fixfolderstructure(folder)
 
     #trackers file
-    with open(f'{folder}/.hermes/tracker.json', 'w') as file:
+    with open(join_path(folder, '.hermes', 'tracker.json'), 'w') as file:
         file.write("{}")
     
     print(colorama.Style.BRIGHT + colorama.Fore.GREEN +
@@ -316,12 +337,15 @@ def getheaders(code : str) -> List[str]:
     headers = []
     for each in lines:
         if ('#include' in each) and ('//' != each[:2]):
+            # print('found header:', each)
             h = each[len('#include'):].strip()
             if (h[0] == h[-1]) and (h[0] == '"') : headers.append(h[1:-1])
     return headers
 
 def haschanged(filename : str, tracks : dict) -> bool:
     if filename not in tracks: return True
+    
+    # print("Checking ", filename)
 
     filehex = None
     try:
@@ -332,16 +356,19 @@ def haschanged(filename : str, tracks : dict) -> bool:
             colorama.Fore.RED + colorama.Style.BRIGHT +
             f'🔍 Error in reading file `{filename}`!'
         )
-        return
+        return False
     
     if tracks[filename] != filehex : return True
 
     with open(filename, 'r') as file:
         heads = getheaders(file.read().strip())
+    
+    if superverbose:
+        print('detected headers:', heads)
 
     path = getfilepath(filename)
     heads = list(map(
-        lambda x : f"{path}/{x}",
+        lambda x : f"{path}/{x}" if path else x,
         heads
     ))
 
@@ -381,7 +408,7 @@ def updatetracks(filename : str, tracks : dict) -> dict:
 
     path = getfilepath(filename)
     heads = list(map(
-        lambda x : (f"{path}/{x}"),
+        lambda x : (f"{path}/{x}") if path else x,
         heads
     ))
 
@@ -467,6 +494,9 @@ def main():
         sys.exit(0)
 
 
+    #precommands
+    if projecthermes['commands']:
+        run_commands(projecthermes['commands'])
 
 
     #dealing with wildcards, spicy paths etc.
@@ -494,6 +524,11 @@ def main():
 
     if (not 'compiler' in projecthermes.keys()) or (not projecthermes['compiler']):
         projecthermes['compiler'] = 'g++'
+    
+    if (not 'libs' in projecthermes.keys()):
+        projecthermes['libs'] = []
+    if (not 'objects' in projecthermes.keys()):
+        projecthermes['objects'] = []
 
     #adding globals
     combineglobals()
@@ -544,6 +579,13 @@ def main():
     linkercommand = f"{projecthermes['compiler']} -o {projecthermes['output']} "
     for each in projecthermes['inputs']:
         linkercommand += f" {cwd}/.hermes/objs/{getfilename(each).split('.')[0]}.o "
+    linkercommand += ' ' + ' '.join(projecthermes['objects']) + ' '
+    linkercommand += (
+        " ".join(list(map(
+            lambda x: f'-L{os.path.dirname(x)} -l{os.path.basename(x).split('.')[0][3:]}', 
+            projecthermes["libs"]
+        ))) + " "
+    )
     linkercommand += ' '.join(projecthermes['flags'])
     linkercommand += f' {opt} '
 

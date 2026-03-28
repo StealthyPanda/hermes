@@ -4,3 +4,4 @@
 *.cmd
 *.json
 *.zip
+poetry.lock
