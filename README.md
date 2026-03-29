@@ -28,63 +28,45 @@ Any project can be turned into a hermes project by creating a single `hermes.jso
 
 In the root folder of the project, open a terminal and run:
 ```bash
-hermes
+hermes init
 ```
-or simply create an empty `hermes.json` file. To build the project, simply run `hermes` in terminal.
+or simply create an empty `hermes.json` file. To build the project, simply run `hermes build` in terminal.
 <br>
 <br>
 
 The JSON file controls the following (and only) settings for building the project:
 
-- `"compiler"` : The compiler used for building; defaults to `c++` (not included) or uses the full path provided to compiler binary.
-- `"inputs"` : Input files for the project; list of paths to the `.cpp` files. Can be absolute or relative paths, and to include all files in a folder use `"folderpath/*"` syntax; this contains all `.cpp` files both internal and external to the project directory.
-- `"includes"` : List of all the include files' folder paths; syntax follows that of `"inputs"`; this contains header files outside of your project directory.
-- `"output"` : Output file name; defaults to `*first_input_file_name*_output.exe`
-- `"run"` : Optional setting, if set `true` the build output is automatically launched after building; defaults to `false`
-- `"flags"` : List of any additional flags; these flags are added to the final compiler command as is.
+- `"name"`: Name of the hermes module.
+- `"compiler"` : The compiler used for building; defaults to `clang` (not included) or uses the full path provided to compiler binary.
+- `"inputs"` : Input files for the project (all `.c` or `.cpp` files)
+    - `"exe"`: files for final executable
+    - `"lib"`: files for making static lib
+- `"libs"`: names of static libs to include
+- `"libdirs"`: dirs to find these libs in
+- `"libincdirs"`: dirs to find headers for these libs in
+- `"target"`: info for target
+    - `"type"`: `"exe"` or `"lib"`
+    - `"run"`: `true` or `false`. whether to run the final executable after building
+    - `"exeout"`: path for executable output
+    - `"libout"`: path for static lib output
+    - `"incdirs"`: dirs containing header files when compiling as a static lib
+- `"submodules"`: other hermes modules to use in this module. just provide root of the module (containing `hermes.json`). there are 2 ways to do so:
+    - `"assrcs"`: modules to include as source. this won't compile submodules as static lib files, and instead treat sources in submodule as part of this module. if unsure, use this method.
+    - `"aslibs"`: modules to include as static libs. this will compile submodules as static lib files (respecting their own lib include methods and stuff), and automatically link them in this module.
 
-Finally, to get verbose output, run:
+
+# Building
+
+To build, run 
 
 ```bash
-hermes -v # (for verbose) | -vv (for super verbose)
+hermes build
 ```
-and see the final compiler command.
 
-Hermes also has a global config file, which is stored at `C:\hermes` or `/etc/hermes`. To interact with this file through the terminal, use:
-```bash
-hermes global <operation> <key> <value>
-```
-where
+Use `--debug` for debug output, and `--verbose` for verbose.
 
-- operations:
-    - `change` - changes value at `key` to given `value`
-    - `append` - appends the given `value` at `key` (only for lists)
-    - `show` - display the current globals config
 
-Note: `show` requires no `key`/`value`, and a `value` of `.` sets it to empty.
-
-### Build optimizations
-
-While these can be added as `flags`, optimizations can also be enabled for a single compilation by running:
-```bash
-hermes <opt>
-```
-where `<opt>` can be
-- `-b` for O1 level
-- `-bb` for O2 level
-- `-bbb` for O3 level
-- `-saikou` for Ofast level
-*Note: Not all these optimization levels are available in all compilers; refer to docs*
-
-<br>
-<br>
-
-All input files (`*.c`, `*.cxx` etc) are tracked automatically, and when hermes is called, only files with changes are recompiled to update object files, reducing build times. To force recompilation of all files, use `-redo` to simply update all object files, or `-force` to simple compile the entire application in a single compile command, original style.
-
-<br>
-<br>
-
-And that's it! The build system is meant to be as non-opaque as possible, while still automating and speeding up only most tedious part of the building process, while still giving you complete control.
+And that's it! The build system is meant to be as non-opaque as possible, while still automating and speeding up only most tedious part of the building process and giving you complete control.
 
 
 ## Authors
