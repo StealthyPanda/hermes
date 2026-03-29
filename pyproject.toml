@@ -1,20 +1,20 @@
-[tool.poetry]
+[project]
 name = "hermes"
-version = "1"
-description = "A build tool for C/C++."
-authors = ["StealthyPanda <shaikm259@gmail.com>"]
-license = "LICENSE"
+version = "2.0"
+description = "A simple no nonsense build system for C/C++"
+authors = [
+    {name = "StealthyPanda",email = "shaikm259@gmail.com"}
+]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.8"
-colorama = "^0.4.6"
+requires-python = ">=3.11"
+dependencies = [
+    "typer (>=0.24.1,<0.25.0)"
+]
 
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 hermes = "hermes:main"
-
