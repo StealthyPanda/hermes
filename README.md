@@ -53,7 +53,10 @@ The JSON file controls the following (and only) settings for building the projec
 - `"submodules"`: other hermes modules to use in this module. just provide root of the module (containing `hermes.json`). there are 2 ways to do so:
     - `"assrcs"`: modules to include as source. this won't compile submodules as static lib files, and instead treat sources in submodule as part of this module. if unsure, use this method.
     - `"aslibs"`: modules to include as static libs. this will compile submodules as static lib files (respecting their own lib include methods and stuff), and automatically link them in this module.
+-`"copts"`: additional compilation options 
+-`"lopts"`: additional linker options 
 
+Rule of thumb, if you include anything within "", it is tracked for changes and treated as part of the codebase, and anything within <> is treated as external headers (untracked).
 
 # Building
 

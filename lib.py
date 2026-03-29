@@ -29,6 +29,8 @@ template = {
         'assrcs' : [],
         'aslibs' : [],
     },
+    'copts' : [],
+    'lopts' : [],
 }
 
 platform = 'mac'
@@ -83,7 +85,8 @@ def compile_unit(bm : BuildModule, unit : str, target : str):
         ' '.join([f'-I"{os.path.abspath(x)}"' for x in bm.config['libincdirs']]) + 
         ' ' +
         f'-c "{unit}" ' +
-        f'-o "{target}"'
+        f'-o "{target}" ' +
+        ' '.join([f'-{x}' for x in bm.config['copts']])
     )
     if bm.verbose : rprint(cmd)
     res = os.system(cmd)
@@ -97,7 +100,8 @@ def link(bm : BuildModule, objects : list[str]):
         '-o "' + bm.config['target']['exeout'] + '" ' +
         ' '.join([f'"{os.path.join(objectspath(bm), x)}.o"' for x in objects]) + ' ' +
         ' '.join([f'-l{x}' for x in bm.config['libs']]) + ' ' +
-        ' '.join([f'-L"{x}"' for x in bm.config['libdirs']])
+        ' '.join([f'-L"{x}"' for x in bm.config['libdirs']]) + ' ' +
+        ' '.join([f'-{x}' for x in bm.config['lopts']])
     )
     if bm.verbose: rprint(cmd)
     res = os.system(cmd)
