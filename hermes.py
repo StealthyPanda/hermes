@@ -1,4 +1,6 @@
 
+from typing import Annotated
+
 import typer, os, rich, json, shutil, traceback, time
 
 from lib import *
@@ -52,7 +54,17 @@ def init():
 
 
 @app.command()
-def build(debug : bool = False, verbose : bool = False):
+def build(
+        debug : Annotated[bool, typer.Option(
+            help='Outputs debug info'
+        )] = False,
+        verbose : Annotated[bool, typer.Option(
+            help='Outputs debug info + commands and everything'
+        )] = False,
+        force : Annotated[bool, typer.Option(
+            help='Forces recompilation of all files, ignoring tracks'
+        )] = False,
+    ):
     """Builds the current hermes module"""
     if not os.path.exists(hermes_file_path):
         raise FileNotFoundError(
@@ -62,7 +74,8 @@ def build(debug : bool = False, verbose : bool = False):
         bm = BuildModule(
             root=os.path.abspath(os.path.curdir),
             config=json.loads(file.read()),
-            debug=debug or verbose, verbose=verbose
+            debug=debug or verbose, verbose=verbose,
+            force=force
         )
     
     start = time.time()
@@ -82,10 +95,48 @@ def build(debug : bool = False, verbose : bool = False):
 
         clr = 'red' if code else 'green'
         rprint(
-            f"\n[dim]Finished execution with[/] [{clr}]exit code[/] "
+            f"\n[dim]Finished execution with[/] [{clr}]exit code {code}[/] "
             f"[dim]in[/] [yellow]{end-start:.2f}s[/]"
         )
     
+
+@app.command()
+def run():
+    """Runs the module executable, if it exists"""
+    if not os.path.exists(hermes_file_path):
+        raise FileNotFoundError(
+            "Not a hermes module! (Use `hermes init` to make one here)"
+        )
+    with open(hermes_file_path, 'r') as file:
+        bm = BuildModule(
+            root=os.path.abspath(os.path.curdir),
+            config=json.loads(file.read()),
+            debug=False, verbose=False,
+            force=False
+        )
+    
+    eo = bm.config['target']['exeout']
+    eo = os.path.abspath(eo)
+    if not os.path.exists(eo):
+        rprint(
+            "[red]Module doesn't have an executable; "
+            "set target type to `exe` and run `hermes build`[/]"
+        )
+        return
+    
+    start = time.time()
+    try:
+        code = os.system(eo)
+    except KeyboardInterrupt:
+        pass
+    end = time.time()
+
+    clr = 'red' if code else 'green'
+    rprint(
+        f"\n[dim]Finished execution with[/] [{clr}]exit code {code}[/] "
+        f"[dim]in[/] [yellow]{end-start:.2f}s[/]"
+    )
+
 
 
 console = Console()

@@ -44,6 +44,7 @@ class BuildModule:
     config : dict[str, list[str] | str | bool]
     debug : bool
     verbose : bool
+    force : bool = False
 
 
 class LinkerError(Exception):
@@ -154,7 +155,9 @@ def build_module(bm : BuildModule):
         with open(hp, 'r') as file:
             subbm = BuildModule(
                 root=submod,
-                config=json.loads(file.read())
+                config=json.loads(file.read()),
+                debug = bm.debug, verbose=bm.verbose,
+                force=bm.force
             )
         
         bm.config['inputs'][bm.config['target']['type']] += subbm.config['inputs']['lib']
@@ -173,7 +176,9 @@ def build_module(bm : BuildModule):
         with open(hp, 'r') as file:
             subbm = BuildModule(
                 root=submod,
-                config=json.loads(file.read())
+                config=json.loads(file.read()),
+                debug=bm.debug, verbose=bm.verbose,
+                force=bm.force
             )
         
         subbm.config['target']['type'] = 'lib'
@@ -273,6 +278,12 @@ def build_module(bm : BuildModule):
         lambda x: os.path.basename(x).split('.')[-1].lower() in exts,
         changed_files
     ))
+    
+    if bm.force:
+        changed_files = list(filter(
+            lambda x: os.path.basename(x).split('.')[-1].lower() in exts,
+            all_files
+        ))
     
     if bm.verbose:
         rprint('changed files:')
