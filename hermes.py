@@ -148,9 +148,13 @@ def main():
         while traceback.tb_next:
             traceback = traceback.tb_next
         
+        sl = False
+        if hasattr(e, 'bm'):
+            sl = e.bm.verbose
+        
         rich_tb = Traceback.from_exception(
             exc_type, exc_value, traceback,
-            show_locals=True,
+            show_locals= sl ,
             # theme="monokai",
             theme="inkpot",
             extra_lines=3

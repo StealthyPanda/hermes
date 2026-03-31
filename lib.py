@@ -48,31 +48,34 @@ class BuildModule:
 
 
 class LinkerError(Exception):
-    def __init__(self, message, cmd, debug : bool = False):
+    def __init__(self, message, cmd, bm, debug : bool = False):
         super().__init__(message)
         self.debug = debug
         self.cmd = cmd
+        self.bm = bm
 
 class CompileError(Exception):
-    def __init__(self, message, cmd, debug : bool = False):
+    def __init__(self, message, cmd, bm, debug : bool = False):
         super().__init__(message)
         self.debug = debug
         self.cmd = cmd
+        self.bm = bm
 
 class StaticLibCompileError(Exception):
-    def __init__(self, message, cmd, debug : bool = False):
+    def __init__(self, message, cmd, bm, debug : bool = False):
         super().__init__(message)
         self.debug = debug
         self.cmd = cmd
+        self.bm = bm
 
 
 
 def trackspath(bm : BuildModule):
-    return os.path.join(bm.root, '.hermes', 'tracks.json')
+    return os.path.abspath(os.path.join(bm.root, '.hermes', 'tracks.json'))
 def mappingspath(bm : BuildModule):
-    return os.path.join(bm.root, '.hermes', 'mappings.json')
+    return os.path.abspath(os.path.join(bm.root, '.hermes', 'mappings.json'))
 def objectspath(bm : BuildModule):
-    return os.path.join(bm.root, '.hermes', 'objects')
+    return os.path.abspath(os.path.join(bm.root, '.hermes', 'objects'))
 
 def get_hex_digest(data : str) -> str:
     return hashlib.sha1(
@@ -92,7 +95,7 @@ def compile_unit(bm : BuildModule, unit : str, target : str):
     if bm.verbose : rprint(cmd)
     res = os.system(cmd)
     if res:
-        raise CompileError(f"Compile error in unit `{unit}`", cmd, bm.debug)
+        raise CompileError(f"Compile error in unit `{unit}`", cmd, bm, bm.debug)
         
 
 def link(bm : BuildModule, objects : list[str]):
@@ -101,19 +104,22 @@ def link(bm : BuildModule, objects : list[str]):
         '-o "' + bm.config['target']['exeout'] + '" ' +
         ' '.join([f'"{os.path.join(objectspath(bm), x)}.o"' for x in objects]) + ' ' +
         ' '.join([f'-l{x}' for x in bm.config['libs']]) + ' ' +
-        ' '.join([f'-L"{x}"' for x in bm.config['libdirs']]) + ' ' +
+        ' '.join([f'-L"{os.path.abspath(os.path.join(bm.root, x))}"'
+                  for x in bm.config['libdirs']]) + ' ' +
         ' '.join([f'-{x}' for x in bm.config['lopts']])
     )
     if bm.verbose: rprint(cmd)
     res = os.system(cmd)
     if res:
-        raise LinkerError(f"Linker error!", cmd, bm.debug)
+        raise LinkerError(f"Linker error!", cmd, bm, bm.debug)
 
 
 
 def llvm_lib_cmd(bm : BuildModule, objects : list[str]):
+    lbp = os.path.join(bm.root, bm.config['target']['libout'])
+    lbp = os.path.abspath(lbp)
     cmd = (
-        f"llvm-lib /OUT:{bm.config['target']['libout']}.lib " +
+        f"llvm-lib /OUT:{lbp}.lib " +
         ' '.join([f'"{os.path.join(objectspath(bm), x)}.o"' for x in objects]) + " " +
         ' '.join([f'-l{x}' for x in bm.config['libs']]) + ' ' +
         ' '.join([f'-L"{x}"' for x in bm.config['libdirs']])
@@ -122,7 +128,7 @@ def llvm_lib_cmd(bm : BuildModule, objects : list[str]):
         rprint(cmd)
     res = os.system(cmd)
     if res:
-        raise StaticLibCompileError(f"Static Lib Compile failed!", cmd, bm.debug)
+        raise StaticLibCompileError(f"Static Lib Compile failed!", cmd, bm, bm.debug)
 
 
 
@@ -160,7 +166,10 @@ def build_module(bm : BuildModule):
                 force=bm.force
             )
         
-        bm.config['inputs'][bm.config['target']['type']] += subbm.config['inputs']['lib']
+        bm.config['inputs'][bm.config['target']['type']] += [
+            os.path.abspath(os.path.join(subbm.root, x)) 
+            for x in subbm.config['inputs']['lib']
+        ]
         bm.config['libincdirs'] += subbm.config['libincdirs']
         bm.config['libs'] += subbm.config['libs']
         bm.config['libdirs'] += subbm.config['libdirs']
@@ -181,13 +190,21 @@ def build_module(bm : BuildModule):
                 force=bm.force
             )
         
-        subbm.config['target']['type'] = 'lib'
-        build_module(subbm)
+        lo = os.path.abspath(os.path.join(
+            subbm.root,
+            subbm.config['target']['libout']
+        ))
+        if not os.path.exists(f'{lo}.lib'):
+            rprint(f"[dim]Unbuilt submodule `{subbm.config['name']}`; ", end='')
+            subbm.config['target']['type'] = 'lib'
+            build_module(subbm)
         
-        bm.config['libincdirs'] += subbm.config['target']['incdirs']
-        lo = subbm.config['target']['libout']
-        libdir = os.path.dirname(os.path.abspath(lo))
-        lib = os.path.basename(os.path.abspath(lo))
+        bm.config['libincdirs'] += [
+            os.path.abspath(os.path.join(subbm.root, x)) 
+            for x in subbm.config['target']['incdirs']
+        ]
+        libdir = os.path.dirname(lo)
+        lib = os.path.basename(lo)
         
         bm.config['libs'].append(lib)
         bm.config['libdirs'].append(libdir)
@@ -216,6 +233,7 @@ def build_module(bm : BuildModule):
     
     all_files = []
     for each in bm.config['inputs'][bm.config['target']['type']]:
+        each = os.path.abspath(os.path.join(bm.root, each))
         sub = glob.glob(each, recursive=True, root_dir=bm.root)
         sub = list(filter(lambda x: os.path.isfile(x), sub))
         all_files += sub
@@ -298,7 +316,10 @@ def build_module(bm : BuildModule):
         compile_unit(bm, each, os.path.join(op, f'{file_mapping[each]}.o'))
     
     if bm.config['target']['type'] == 'exe':
-        link(bm, [file_mapping[x] for x in file_mapping])
+        link(bm, [file_mapping[x] for x in list(filter(
+            lambda y: y.split('.')[-1] in exts,
+            all_files
+        ))])
     elif bm.config['target']['type'] == 'lib':
         llvm_lib_cmd(bm, [file_mapping[x] for x in file_mapping])
     
