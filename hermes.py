@@ -98,7 +98,38 @@ def build(
             f"\n[dim]Finished execution with[/] [{clr}]exit code {code}[/] "
             f"[dim]in[/] [yellow]{end-start:.2f}s[/]"
         )
-    
+
+
+@app.command()
+def gen(
+        filetype : Annotated[str, typer.Argument(
+            help='Type of file'
+        )] = 'clangd-compile-flags'
+    ):
+    """Generates files for LSPs and stuff."""
+    if not os.path.exists(hermes_file_path):
+        raise FileNotFoundError(
+            "Not a hermes module! (Use `hermes init` to make one here)"
+        )
+    with open(hermes_file_path, 'r') as file:
+        bm = BuildModule(
+            root=os.path.abspath(os.path.curdir),
+            config=json.loads(file.read()),
+            debug=False, verbose=False,
+            force=False
+        )
+    if filetype == 'clangd-compile-flags':
+        fp = os.path.join(bm.root, 'compile_flags.txt')
+        with open(fp, 'w') as file:
+            file.write(
+                '\n'.join(
+                    [f'-I{x}'   for x in bm.config["libincdirs"]] +
+                    [f'-l{x}'     for x in bm.config["libs"]] + 
+                    [f'-L{x}'   for x in bm.config["libdirs"]]
+                ) + '\n'
+            )
+        
+
 
 @app.command()
 def run():
