@@ -12,7 +12,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.traceback import Traceback
 
-from lib import *
+from .lib import *
 
 app = typer.Typer(help="A simple no nonsense build system for C/C++")
 
