@@ -334,6 +334,6 @@ def build_module(bm : BuildModule):
     if bm.debug:
         output_buff = f"{bm.config['target']['type']}out"
         output_buff = bm.config['target'][output_buff]
-        rprint(f":white_check_mark: [green bold]Built `{bm.config['name']}`[/] -> `{output_buff}`")
+        rprint(f":white_check_mark: [green bold]Built `{bm.config['name']}` -> `{output_buff}`[/]")
     
         
