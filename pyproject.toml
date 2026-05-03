@@ -1,6 +1,6 @@
 [project]
 name = "hermes"
-version = "2.1.0"
+version = "2.1.1"
 description = "A simple no nonsense build system for C/C++"
 authors = [
     {name = "StealthyPanda",email = "shaikm259@gmail.com"}

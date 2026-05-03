@@ -332,6 +332,8 @@ def build_module(bm : BuildModule):
         file.write(json.dumps(file_mapping, indent=4))
     
     if bm.debug:
-        rprint(f"[green bold]Built `{bm.config['name']}`[/] :white_check_mark:")
+        output_buff = f"{bm.config['target']['type']}out"
+        output_buff = bm.config['target'][output_buff]
+        rprint(f":white_check_mark: [green bold]Built `{bm.config['name']}`[/] -> `{output_buff}`")
     
         
